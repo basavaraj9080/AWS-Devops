@@ -8,7 +8,7 @@ Think of it as the gatekeeper of AWS → deciding who can do what and where.
 ________________________________________
 🔹 Key IAM Concepts
 1.	Users
-    o	Individual identities (like developers, admins).
+    o Individual identities (like developers, admins).
     o	Each user gets credentials (username + password or access keys).
 2.	Groups
 o	Collection of users with shared permissions. Example: DevOps Team.
