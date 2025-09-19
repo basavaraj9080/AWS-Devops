@@ -8,20 +8,26 @@ Think of it as the gatekeeper of AWS → deciding who can do what and where.
 ________________________________________
 🔹 Key IAM Concepts
 1.	Users
-    o Individual identities (like developers, admins).
+    o	Individual identities (like developers, admins).
     o	Each user gets credentials (username + password or access keys).
-2.	Groups
-o	Collection of users with shared permissions. Example: DevOps Team.
-3.	Roles
-o	Temporary access for AWS services or external users.
-o	Example: An EC2 instance assuming a role to access S3 securely.
-4.	Policies
-o	JSON documents that define permissions.
-o	Example: Allow EC2 to read/write from S3.
-5.	Permissions Boundaries
-o	Advanced feature → restricts max permissions a role or user can have.
-6.	MFA (Multi-Factor Authentication)
-o	Extra security → beyond just password.
+  	
+3.	Groups
+    o	Collection of users with shared permissions. Example: DevOps Team.
+  	
+5.	Roles
+    o	Temporary access for AWS services or external users.
+    o	Example: An EC2 instance assuming a role to access S3 securely.
+
+6.	Policies
+    o	JSON documents that define permissions.
+    o	Example: Allow EC2 to read/write from S3.
+
+7.	Permissions Boundaries
+    o	Advanced feature → restricts max permissions a role or user can have.
+
+8.	MFA (Multi-Factor Authentication)
+    o	Extra security → beyond just password.
+
 ________________________________________
 🔹 IAM in DevOps Use Cases
 •	CI/CD Pipelines →
