@@ -153,3 +153,7 @@ Think of it as **U-H-D-S** →
 
 ---
 
+**List Of Commands**
+```sudo su -```
+```ls -lh```
+<img width="324" height="125" alt="image" src="https://github.com/user-attachments/assets/1fd316ba-9527-4e06-8412-d043c06b1c62" />
