@@ -269,4 +269,18 @@ cat file.txt | wc -w
 
 ### 6. `Ctrl + r` redo the changes
 
+### 7. Replace all occurrences of a word in the file
+`:%s/oldword/newword/g`
+* `:` → enter command mode
+* `%` → apply to the entire file
+* `s` → substitute
+* `oldword` → word to replace
+* `newword` → replacement
+* `g` → replace all occurrences on a line
+
+**Example**:
+`:%s/hello/world/g`
+
+Replaces all instances of hello with world in the file.
+
 ---
