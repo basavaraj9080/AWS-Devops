@@ -234,4 +234,30 @@ cat file.txt | wc -w
 
 * Counts words from the output of `cat file.txt` (or any other command).
 
+### 1. `:set nu`
+
+* **Purpose:** Turns on **line numbering** in Vim.
+* After executing this, you’ll see line numbers on the left side of the editor.
+* Example:
+
+```
+ 1  First line
+ 2  Second line
+ 3  Third line
+```
+
+### 2. `G`
+
+* **Purpose:** Moves the cursor to the **last line** of the file.
+* Useful for quickly jumping to the end of a file.
+
+### 3. `gg`
+
+* **Purpose:** Moves the cursor to the **first line** of the file.
+* Handy for quickly jumping to the top.
+
+### Bonus Tips
+
+* Combine with line numbers: after `:set nu`, you can use `:5G` to go directly to line 5.
+* To turn off line numbers: `:set nonu`.
 ---
