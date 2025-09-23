@@ -92,3 +92,64 @@ They are mainly divided into **two families**:
 * **D → Debian → Debian/Ubuntu**
 
 ---
+---
+
+## 🔹 What is Bash?
+
+* **Bash** = **Bourne Again SHell** (default shell in most Linux distros).
+* It’s the command-line interface where you interact with Linux.
+
+---
+
+## 🔹 What is a Bash Prompt?
+
+* The **prompt** is what you see before typing a command in the terminal.
+* It shows that the shell is **ready to accept input**.
+
+---
+
+### 🖥 Example of a default Bash prompt:
+
+```
+user@hostname:~$
+```
+
+---
+
+## 🔹 Common Parts of Bash Prompt
+
+1. **user** → Your username
+2. **hostname** → The system’s name (computer/server)
+3. **current directory (\~)** → `~` means home directory
+4. **\$ or #** →
+
+   * `$` → Normal user
+   * `#` → Root (superuser)
+
+---
+
+### Example:
+
+```
+john@ubuntu:~/projects$
+```
+
+* `john` = username
+* `ubuntu` = hostname
+* `~/projects` = current directory
+* `$` = normal user
+
+---
+
+## 🎯 Interview-Friendly Answer
+
+**“The Bash prompt is the text you see in the terminal before entering a command. It usually shows the username, hostname, current directory, and ends with a `$` for a normal user or `#` for root. It tells you the shell is ready for input.”**
+
+---
+
+👉 Trick to Remember:
+Think of it as **U-H-D-S** →
+**User – Host – Directory – Symbol**
+
+---
+
