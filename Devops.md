@@ -157,6 +157,14 @@ Think of it as **U-H-D-S** →
 ```
 sudo su -
 ```
+-- sudo runs a command with superuser (root) privileges.
+
+-- su - switches to the root user and loads the root user's environment.
+
+Together, sudo su - gives you a root shell with root’s environment.
+
+**Caution**: You now have full administrative privileges; commands can affect the entire system.
+
 ```
 ls -lh
 ```
