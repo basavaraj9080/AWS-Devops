@@ -170,3 +170,68 @@ The commands you typed are Linux/Unix shell commands. Here’s what they do:
    * `-h` makes file sizes human-readable (e.g., 1K, 5M, 2G instead of bytes).
 
 <img width="324" height="125" alt="image" src="https://github.com/user-attachments/assets/1fd316ba-9527-4e06-8412-d043c06b1c62" />
+
+
+**``wc`` command**
+
+### Basic Usage
+
+```bash
+wc [options] filename
+```
+
+### Common Options
+
+| Option | Description                          |
+| ------ | ------------------------------------ |
+| `-l`   | Count **lines** only                 |
+| `-w`   | Count **words** only                 |
+| `-c`   | Count **bytes** (or characters) only |
+| `-m`   | Count **characters**                 |
+| `-L`   | Show **length of the longest line**  |
+
+### Examples
+
+1. **Count lines, words, and bytes in a file**
+
+```bash
+wc file.txt
+```
+
+Output might look like:
+
+```
+  10  50  300 file.txt
+```
+
+* `10` → lines
+* `50` → words
+* `300` → bytes
+
+2. **Count lines only**
+
+```bash
+wc -l file.txt
+```
+
+3. **Count words only**
+
+```bash
+wc -w file.txt
+```
+
+4. **Count characters only**
+
+```bash
+wc -m file.txt
+```
+
+5. **Using `wc` with a pipe**
+
+```bash
+cat file.txt | wc -w
+```
+
+* Counts words from the output of `cat file.txt` (or any other command).
+
+---
