@@ -260,4 +260,13 @@ cat file.txt | wc -w
 
 * Combine with line numbers: after `:set nu`, you can use `:5G` to go directly to line 5.
 * To turn off line numbers: `:set nonu`.
+
+### 4. `5dd`
+* Press **Esc** to ensure you are in normal mode.
+* **5dd** → deletes 5 lines starting from the current line (if you are at line 1, this deletes lines 1–5).
+
+### 5. `u` Undo the last change
+
+### 6. `Ctrl + r` redo the changes
+
 ---
