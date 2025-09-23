@@ -408,3 +408,8 @@ flatpak list
 * For servers, prefer `apt-get` / `dnf` scripts in automation over GUI tools.
 
 ---
+
+**Other Important COmmands**
+1. ```top```
+2. ```htop```
+3. ```uptime```
