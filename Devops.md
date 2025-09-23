@@ -284,3 +284,127 @@ cat file.txt | wc -w
 Replaces all instances of hello with world in the file.
 
 ---
+
+
+**Package Management**
+
+<img width="758" height="338" alt="image" src="https://github.com/user-attachments/assets/07311fb9-7e71-4e88-b571-caf690eccd0e" />
+
+Package management in Linux is a core concept that helps you **install, update, remove, and manage software packages** on your system. Linux distributions use package managers to handle these tasks efficiently, often dealing with dependencies automatically. Let’s break it down clearly.
+
+---
+
+## 1. **What is a Package?**
+
+A package is a compressed archive that contains:
+
+* Software binaries or source code
+* Metadata (version, description, dependencies)
+* Configuration files
+
+Examples: `vim`, `nginx`, `python3`.
+
+---
+
+## 2. **Types of Package Management Systems**
+
+Linux has **two main types**:
+
+### a) **Debian-based systems** (Ubuntu, Debian, Linux Mint)
+
+* **Package format:** `.deb`
+* **Package manager tools:**
+
+  * `dpkg` – low-level tool for installing `.deb` files
+  * `apt` / `apt-get` – high-level tool for resolving dependencies and fetching packages from repositories
+
+**Examples:**
+
+```bash
+# Update package list
+sudo apt update
+
+# Upgrade installed packages
+sudo apt upgrade
+
+# Install a package
+sudo apt install nginx
+
+# Remove a package
+sudo apt remove nginx
+```
+
+---
+
+### b) **Red Hat-based systems** (RHEL, CentOS, Fedora)
+
+* **Package format:** `.rpm`
+* **Package manager tools:**
+
+  * `rpm` – low-level tool for installing `.rpm` files
+  * `yum` / `dnf` – high-level tools for dependency resolution
+
+**Examples:**
+
+```bash
+# Install a package
+sudo dnf install httpd
+
+# Update installed packages
+sudo dnf update
+
+# Remove a package
+sudo dnf remove httpd
+```
+
+---
+
+### c) **Other popular package managers**
+
+* **Arch Linux:** `pacman`
+* **OpenSUSE:** `zypper`
+* **Universal / Cross-distribution:**
+
+  * `snap` – Canonical’s universal packages
+  * `flatpak` – Sandbox-based universal packages
+  * `AppImage` – Portable app format
+
+---
+
+## 3. **Package Management Concepts**
+
+| Concept              | Description                                                   |
+| -------------------- | ------------------------------------------------------------- |
+| **Repository**       | A server storing packages that can be installed on the system |
+| **Dependency**       | Other packages required for a package to work                 |
+| **Upgrade / Update** | Updating packages to latest versions                          |
+| **Installation**     | Adding new software to the system                             |
+| **Removal / Purge**  | Removing software; purge also removes configuration files     |
+| **Cache / Clean**    | Removing downloaded package files to save space               |
+
+---
+
+## 4. **Checking Installed Packages**
+
+```bash
+# Debian-based
+dpkg -l | grep nginx
+
+# Red Hat-based
+rpm -qa | grep httpd
+
+# Universal
+snap list
+flatpak list
+```
+
+---
+
+## 5. **Practical Tips**
+
+* Always update repositories before installing: `sudo apt update` / `sudo dnf check-update`
+* Use `--dry-run` or `--simulate` in some managers to see what will happen without making changes.
+* Be careful with `remove` vs `purge` in Debian-based systems.
+* For servers, prefer `apt-get` / `dnf` scripts in automation over GUI tools.
+
+---
