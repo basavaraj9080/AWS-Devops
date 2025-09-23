@@ -27,3 +27,25 @@ Think of **FSSFC-E** →
 If they ask *“Why Linux?”* you can answer:
 
 “Linux is free and open source, which makes it cost-effective. It’s more secure and stable compared to other operating systems, and it runs efficiently even on low hardware. It’s also highly customizable, and since it’s widely used in servers, cloud, DevOps, and cybersecurity, learning Linux is essential in IT.”
+
+
+**What is Opensource?**
+Good question 👌 — interviewers often ask this right after *“Why Linux?”*
+----------------------------------------------------------------------------------------------------------
+## ✅ Simple Definition
+
+**Open Source** means the software’s **source code is publicly available**. Anyone can **view, use, modify, and share** it freely, under an open-source license.
+
+## 🔹 Key Points (easy to remember)
+
+* **Free access** → No hidden code.
+* **Modifiable** → Developers can change and improve it.
+* **Community-driven** → Large groups maintain and support it.
+* **Examples** → Linux, Apache, MySQL, Python.
+
+## 🎯 Interview-Friendly Answer (30 sec)
+
+**“Open-source software is software whose source code is freely available to everyone. Users can view, modify, and distribute it. This encourages collaboration, faster innovation, and stronger security because the global community contributes to improving it. Examples include Linux, Python, and Apache.”**
+
+👉 Trick to remember: **“Open Source = Open Code, Open Community, Open Contribution.”**
+---------------------------------------------------------------------------------------------------------
