@@ -49,3 +49,46 @@ Good question 👌 — interviewers often ask this right after *“Why Linux?”
 
 👉 Trick to remember: **“Open Source = Open Code, Open Community, Open Contribution.”**
 ---------------------------------------------------------------------------------------------------------
+---
+
+## 📌 Linux Distributions (Distros)
+
+Linux isn’t a single OS — it comes in many *flavors* called **distributions**, built on the same kernel but packaged differently.
+
+They are mainly divided into **two families**:
+
+### 1. **RPM-based Distros**
+
+* Use **RPM (RedHat Package Manager)** for software installation.
+* Examples:
+
+  * **Red Hat Enterprise Linux (RHEL)**
+  * **CentOS**
+  * **Amazon Linux**
+
+👉 Mostly used in enterprises and production servers.
+
+---
+
+### 2. **Debian-based Distros**
+
+* Use **DEB packages** with tools like `apt`.
+* Examples:
+
+  * **Ubuntu**
+  * **Debian**
+  * **Linux Mint**
+
+👉 Widely used in cloud, development, and desktops.
+---
+
+## 🎯 Interview-Friendly One-Liner
+
+**“Linux has different distributions. The two major families are RPM-based (like Red Hat, CentOS, Amazon Linux) and Debian-based (like Ubuntu, Debian, Mint). They differ mainly in their package management systems.”**
+---
+👉 Trick to remember:
+
+* **R → RPM → Red Hat**
+* **D → Debian → Debian/Ubuntu**
+
+---
