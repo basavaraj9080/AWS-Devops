@@ -172,7 +172,7 @@ The commands you typed are Linux/Unix shell commands. Here’s what they do:
 <img width="324" height="125" alt="image" src="https://github.com/user-attachments/assets/1fd316ba-9527-4e06-8412-d043c06b1c62" />
 
 
-**``wc`` command**
+3. ``wc``
 
 ### Basic Usage
 
