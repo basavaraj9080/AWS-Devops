@@ -154,19 +154,19 @@ Think of it as **U-H-D-S** →
 ---
 
 **List Of Commands**
-```
-sudo su -
-```
--- sudo runs a command with superuser (root) privileges.
+The commands you typed are Linux/Unix shell commands. Here’s what they do:
 
--- su - switches to the root user and loads the root user's environment.
+1. **`sudo su -`**
 
-Together, sudo su - gives you a root shell with root’s environment.
+   * `sudo` runs a command with superuser (root) privileges.
+   * `su -` switches to the root user and loads the root user's environment.
+   * Together, `sudo su -` gives you a root shell with root’s environment.
+   * **Caution:** You now have full administrative privileges; commands can affect the entire system.
 
-**Caution**: You now have full administrative privileges; commands can affect the entire system.
+2. **`ls -lh`**
 
-```
-ls -lh
-```
+   * `ls` lists files and directories in the current location.
+   * `-l` gives a detailed listing (permissions, owner, group, size, modification date).
+   * `-h` makes file sizes human-readable (e.g., 1K, 5M, 2G instead of bytes).
 
 <img width="324" height="125" alt="image" src="https://github.com/user-attachments/assets/1fd316ba-9527-4e06-8412-d043c06b1c62" />
