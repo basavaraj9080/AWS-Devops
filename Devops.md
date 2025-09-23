@@ -410,6 +410,15 @@ flatpak list
 ---
 
 **Other Important COmmands**
+* CPU Utilization
 1. ```top```
 2. ```htop```
 3. ```uptime```
+
+* Memory Utilization
+1. ```free -h```
+
+* Process Kill
+  ```kill -9 <PID>```
+  Here -9 means **signal kill**
+  You can see all the option by using ```kill -1``` command.
