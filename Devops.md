@@ -424,8 +424,80 @@ flatpak list
   You can see all the option by using ```kill -1``` command.
 
 ---
+***GIT***
+**Version Control System**
+Version Control Systems (VCS) are tools that help teams **track changes to source code, collaborate, and manage different versions** of software.
 
+---
 
-`#RRGGBB`
-![GIT](https://img.shields.io/badge/Text-Red-red)
+# 🔹 **Types of Version Control Systems**
+
+## 1. **Local Version Control System (LVCS)**
+
+* Stores all changes on the **local machine only**.
+* Typically works with simple databases like RCS (Revision Control System).
+* Each developer maintains their own history.
+* Collaboration is difficult since there’s no central repository.
+
+**Example:**
+
+* RCS (Revision Control System)
+* SCCS (Source Code Control System)
+
+---
+
+## 2. **Centralized Version Control System (CVCS)**
+
+* There is **one central server** that stores all the code and its history.
+* Developers **check out** code from the server and **commit** changes back.
+* Collaboration is easier than LVCS, but:
+
+  * If the central server goes down, no one can commit or sometimes even access the latest code.
+  * Single point of failure.
+
+**Examples:**
+
+* CVS (Concurrent Versions System)
+* Subversion (SVN)
+* Perforce
+
+---
+
+## 3. **Distributed Version Control System (DVCS)**
+
+* Every developer has a **full copy of the repository (including history)** on their local machine.
+* Developers can work **offline**, commit locally, and later sync with others.
+* No single point of failure → if one repo is lost, any clone can restore it.
+* Excellent support for branching, merging, and collaboration.
+
+**Examples:**
+
+* **Git** (most popular today)
+* Mercurial
+* Bazaar
+
+---
+
+# 🔹 **Comparison Table**
+
+| Feature                 | LVCS          | CVCS                   | DVCS                 |
+| ----------------------- | ------------- | ---------------------- | -------------------- |
+| Storage                 | Local machine | Central server         | Local + remote repos |
+| Collaboration           | Very hard     | Possible (centralized) | Easy, peer-to-peer   |
+| Offline work            | No            | Limited                | Yes (full history)   |
+| Single point of failure | No            | Yes                    | No                   |
+| Examples                | RCS, SCCS     | SVN, CVS, Perforce     | Git, Mercurial       |
+
+---
+
+# 🔹 **Short Interview Answer**
+
+> “Version control systems are of three main types:
+>
+> 1. **Local VCS** (like RCS) – keeps versions only on local machine.
+> 2. **Centralized VCS** (like SVN, CVS) – one central repo, but has a single point of failure.
+> 3. **Distributed VCS** (like Git, Mercurial) – every developer has a full copy of the repo, supports offline work, and is the most widely used today.”
+
+---
+
 
