@@ -427,6 +427,5 @@ flatpak list
 
 
 `#RRGGBB`
-![Red Text](https://img.shields.io/badge/Text-Red-red)
-![Blue Text](https://img.shields.io/badge/Text-Blue-blue)
+![GIT](https://img.shields.io/badge/Text-Red-red)
 
