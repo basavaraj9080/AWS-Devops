@@ -283,6 +283,10 @@ cat file.txt | wc -w
 
 Replaces all instances of hello with world in the file.
 
+**Display all folders content in one go**
+
+`ls -R`
+
 ---
 
 
