@@ -424,8 +424,9 @@ flatpak list
   You can see all the option by using ```kill -1``` command.
 
 ---
-***GIT***
-**Version Control System**
+# 🔹 ***GIT***
+
+# 🔹 **Version Control System**
 Version Control Systems (VCS) are tools that help teams **track changes to source code, collaborate, and manage different versions** of software.
 
 ---
