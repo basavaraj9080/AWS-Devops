@@ -747,3 +747,7 @@ git push -u origin main
 
 ---
 
+# 🔹 **Branch Strategies**
+
+               <img width="454" height="334" alt="image" src="https://github.com/user-attachments/assets/4e006be7-8e65-48e6-a554-a350ecc6383c" />
+
