@@ -499,6 +499,9 @@ Version Control Systems (VCS) are tools that help teams **track changes to sourc
 > 2. **Centralized VCS** (like SVN, CVS) – one central repo, but has a single point of failure.
 > 3. **Distributed VCS** (like Git, Mercurial) – every developer has a full copy of the repo, supports offline work, and is the most widely used today.”
 
+DIAGRAM:
+     <img width="509" height="385" alt="image" src="https://github.com/user-attachments/assets/b5ff4a45-18ac-4fd8-a87f-06c24b874d46" />
+
 ---
 
 
