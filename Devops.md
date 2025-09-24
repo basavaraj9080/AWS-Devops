@@ -504,4 +504,128 @@ DIAGRAM:
 
 ---
 
+# 🔹 **GIT COMMANDS**
+
+Nice 👍 — you’ve listed some **essential Git commands** and also pointed to `.git/objects/`.
+Let me break this down in a structured way so you can use it for **learning + interview answers**.
+
+
+# 🔹 **Git Commands You Mentioned**
+
+### 1. **Initialize Repository**
+
+```bash
+git init
+```
+
+* Creates a new **Git repository** in the current folder.
+* A hidden `.git/` directory is created (contains all repo data).
+
+
+### 2. **Add Files to Staging Area**
+
+```bash
+git add .
+```
+
+* Adds **all modified + new files** in the current directory (recursively) to staging.
+
+```bash
+git add <file-name>
+```
+
+* Adds only the **specified file** to staging.
+
+```bash
+git add *
+```
+
+* Adds all files in the current directory (non-hidden), but unlike `.`, it doesn’t include files starting with `.` (dotfiles).
+
+
+### 3. **Unstage a File**
+
+```bash
+git restore --staged <file-name>
+```
+
+* Removes the file from the **staging area** (unstage), but keeps changes in the working directory.
+
+
+### 4. **Commit Changes**
+
+```bash
+git commit -m "message"
+```
+
+* Saves the staged changes into the **repository history** with a commit message.
+
+
+### 5. **View Commit History**
+
+```bash
+git log
+```
+
+* Shows the commit history (hash, author, date, message).
+
+```bash
+git log -p
+```
+
+* Shows commit history with the **patch** (actual code changes).
+
+```bash
+git log --oneline
+```
+
+* Shows commit history in a **short, one-line format** (hash + message).
+* Great for quick browsing.
+
+
+# 🔹 **Inside `.git/objects/`**
+
+When you run `git init`, Git creates a hidden `.git/` folder.
+This is the **database of your repository**.
+
+* `.git/objects/` → stores all Git objects (commits, trees, blobs, tags).
+* Files are stored in a **compressed, hashed** format (SHA-1 checksum).
+
+👉 **Types of Git objects:**
+
+1. **Blob** – file data (contents of your files)
+2. **Tree** – directory structure (which files are in a commit)
+3. **Commit** – metadata (author, date, parent commit, message)
+4. **Tag** – named pointer to a commit
+
+So when you do:
+
+```bash
+git add file.txt
+```
+
+* Git creates a **blob object** in `.git/objects/` representing the file content.
+
+When you do:
+
+```bash
+git commit -m "message"
+```
+
+* Git creates:
+
+  * a **commit object** (with metadata and pointer to tree object)
+  * a **tree object** (directory structure)
+  * all pointing to your blobs (files).
+
+This is why Git is so powerful:
+
+* Each object is **content-addressed by hash**, making it nearly impossible to lose data unless you delete `.git/`.
+
+
+# ✅ **Interview-Style Summary**
+
+> “In Git, we first use `git init` to create a repository. `git add` moves changes into the staging area, `git commit` saves them to the repo history, and `git log` shows history. Internally, Git stores all files as objects in `.git/objects/`. There are 4 object types — blob (file data), tree (directory structure), commit (metadata), and tag. This object database is what makes Git distributed, secure, and fast.”
+
+---
 
