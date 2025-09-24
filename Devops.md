@@ -426,4 +426,4 @@ flatpak list
 ---
 
 
-`#GIT`
+`#RRGGBBGIT`
