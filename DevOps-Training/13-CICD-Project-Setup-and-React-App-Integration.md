@@ -8,7 +8,10 @@
 
 **Demo:**
 
--- 	Create EC2 with ubuntu, 10GB
--- ```	sudo su –```
+- Create EC2 with ubuntu, 10GB
+- ```sudo su –```
+- ```hostname Dockerhost```
+- ```bash```
+- ```vi docker.sh```
 
 
