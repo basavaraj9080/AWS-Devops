@@ -38,6 +38,21 @@ EC2 instances are grouped by **use case**:
 
 ---
 
+| Category                             | Use-case                                                         | Example family and types                                                                                     |
+| ------------------------------------ | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **General Purpose**                  | Balanced compute, memory & networking (web servers, app servers) | Families: **T**, **M**. Examples: T3, T4g, M6g, M8g. ([DataCamp][1])                                         |
+| **Compute Optimized**                | CPU-intensive workloads (batch processing, high-traffic web)     | Family: **C**. Examples: C6g, C7g, C8g. ([AWS Documentation][2])                                             |
+| **Memory Optimized**                 | Memory-intensive workloads (in-memory DBs, analytics)            | Families: **R**, **X**, **U**. Examples: R6g, X2idn, U7i. ([AWS Documentation][2])                           |
+| **Storage Optimized**                | High throughput or low latency storage (databases, streaming)    | Families: **I**, **D**, **H**. Examples: I4i, D3en, H1. ([AWS Documentation][2])                             |
+| **Accelerated Computing**            | GPU/FPGA/AI workloads (machine learning, graphics, inference)    | Families: **P**, **G**, **F**, **Inf**, **Trn**. Examples: P5, G5g, F1, Inf1, Trn2. ([AWS Documentation][2]) |
+| **High-Performance Computing (HPC)** | Large scale simulations, super-computing clusters                | Family: **Hpc**. Examples: Hpc7g, Hpc6a. ([AWS Documentation][2])                                            |
+
+[1]: https://www.datacamp.com/blog/aws-ec2-instance-types?utm_source=chatgpt.com "AWS EC2 Instance Types Explained: When to Use Each ..."
+[2]: https://docs.aws.amazon.com/ec2/latest/instancetypes/ec2-types.pdf?utm_source=chatgpt.com "ec2-types.pdf"
+
+
+---
+
 ### 3. What is an AMI (Amazon Machine Image)?
 
 **Answer:**
