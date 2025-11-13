@@ -99,7 +99,7 @@ ssh -i my-key.pem ec2-user@<public-ip>
 | Type             | Description                           | Cost Benefit                                    |
 | ---------------- | ------------------------------------- | ----------------------------------------------- |
 | **On-Demand**    | Pay per second/hour                   | Flexible but most expensive                     |
-| **Reserved**     | Commit 1–3 years                      | Up to 75% cheaper                               |
+| **Reserved**     | Commit 1–3 years                      | Up to 72% cheaper                               |
 | **Spot**         | Use unused capacity                   | Up to 90% cheaper but can be terminated anytime |
 | **Savings Plan** | Flexible commitment for compute usage | Cheaper and flexible                            |
 
