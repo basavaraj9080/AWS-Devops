@@ -121,6 +121,9 @@ Useful when you need a **fixed public IP** (like for DNS or production services)
 | Billing    | Pay for running time      | Pay per execution        |
 | Use case   | Long-running servers      | Event-driven micro tasks |
 
+<img width="1917" height="1027" alt="image" src="https://github.com/user-attachments/assets/14880772-a235-42ef-98e2-264b058e50be" />
+
+
 ---
 
 ### 9. What is EBS (Elastic Block Store)?
