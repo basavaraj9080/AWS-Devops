@@ -31,10 +31,10 @@ ________________________________________
 
 ________________________________________
 🔹 IAM in DevOps Use Cases
-•	CI/CD Pipelines →
-    o	Create IAM roles for Jenkins/GitHub Actions to deploy apps into AWS.
-•	Least Privilege Principle →
-    o	Give only required permissions (e.g., read-only for monitoring).
+   •	CI/CD Pipelines →
+       o	Create IAM roles for Jenkins/GitHub Actions to deploy apps into AWS.
+   •	Least Privilege Principle →
+       o	Give only required permissions (e.g., read-only for monitoring).
 •	Automation →
     o	Terraform/Ansible use IAM roles to manage AWS resources.
 •	DevSecOps →
