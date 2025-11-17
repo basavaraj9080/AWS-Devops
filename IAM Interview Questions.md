@@ -30,15 +30,30 @@ ________________________________________
     o	Extra security → beyond just password.
 
 ________________________________________
-🔹 IAM in DevOps Use Cases
-   •	CI/CD Pipelines →
-       o	Create IAM roles for Jenkins/GitHub Actions to deploy apps into AWS.
-   •	Least Privilege Principle →
-       o	Give only required permissions (e.g., read-only for monitoring).
-•	Automation →
-    o	Terraform/Ansible use IAM roles to manage AWS resources.
-•	DevSecOps →
-    o	Enforce MFA, rotate keys, and monitor via CloudTrail.
+Here is a clean, well-formatted version:
+
+---
+
+## 🔹 **IAM in DevOps – Use Cases**
+
+### **• CI/CD Pipelines**
+
+* Create IAM roles for Jenkins, GitHub Actions, or GitLab CI to deploy applications into AWS.
+
+### **• Least Privilege Principle**
+
+* Provide only the required permissions (e.g., read-only access for monitoring tools).
+
+### **• Automation**
+
+* Tools like Terraform and Ansible use IAM roles to create and manage AWS resources securely.
+
+### **• DevSecOps**
+
+* Enforce MFA, rotate access keys, and monitor activity using AWS CloudTrail for security compliance.
+
+---
+
 ________________________________________
 🔹 Best Practices
     ✅ Use roles instead of long-term keys.
