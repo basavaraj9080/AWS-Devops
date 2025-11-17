@@ -30,9 +30,6 @@ ________________________________________
     o	Extra security → beyond just password.
 
 ________________________________________
-Here is a clean, well-formatted version:
-
----
 
 ## 🔹 **IAM in DevOps – Use Cases**
 
@@ -52,16 +49,34 @@ Here is a clean, well-formatted version:
 
 * Enforce MFA, rotate access keys, and monitor activity using AWS CloudTrail for security compliance.
 
----
-
 ________________________________________
-🔹 Best Practices
-    ✅ Use roles instead of long-term keys.
-    ✅ Apply least privilege → grant only what’s necessary.
-    ✅ Enable MFA for root and admin users.
-    ✅ Rotate access keys regularly.
-    ✅ Use IAM Access Analyzer to detect over-permissive policies.
-    ✅ Tag IAM resources for audit & compliance.
+
+## 🔹 **Best Practices for IAM**
+
+### ✅ **Use roles instead of long-term access keys**
+
+* Prefer IAM roles for applications, EC2, Lambda, and CI/CD tools.
+
+### ✅ **Apply the Principle of Least Privilege**
+
+* Grant only the minimum required permissions to each user or service.
+
+### ✅ **Enable MFA for root and administrative users**
+
+* Adds an extra layer of security and prevents unauthorized access.
+
+### ✅ **Rotate access keys regularly**
+
+* Reduces risk of compromised credentials.
+
+### ✅ **Use IAM Access Analyzer**
+
+* Detects overly permissive policies and unintended public or cross-account access.
+
+### ✅ **Tag IAM resources**
+
+* Helps with auditing, compliance, cost allocation, and organization.
+
 ________________________________________
 👉 Do you want me to also make a Terraform example for creating IAM users, roles, and policies (production-ready, best practices)?
 
