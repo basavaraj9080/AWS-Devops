@@ -32,16 +32,16 @@ ________________________________________
 •	Hybrid Cloud Setup: Connecting AWS-hosted services to private VPCs without using the internet.
 •	Centralized Logging & Monitoring: Sharing monitoring or security services across multiple VPCs.
 ________________________________________
-🔹 How to Set Up VPC Peering?
+## 🔹 How to Set Up VPC Peering?
 1.	Create a Peering Connection:
-o	Go to AWS VPC Console > Peering Connections > Create Peering Connection
-o	Select the requester VPC and the acceptor VPC
+## o	Go to AWS VPC Console > Peering Connections > Create Peering Connection
+## o	Select the requester VPC and the acceptor VPC
 2.	Accept the Peering Request:
-o	The owner of the acceptor VPC must accept the request.
+## o	The owner of the acceptor VPC must accept the request.
 3.	Update Route Tables:
-o	Modify Route Tables in both VPCs to allow traffic between them.
+## o	Modify Route Tables in both VPCs to allow traffic between them.
 4.	Configure Security Groups (SG) & Network ACLs:
-o	Ensure that Security Groups (SGs) & Network ACLs allow traffic between the peered VPCs.
+## o	Ensure that Security Groups (SGs) & Network ACLs allow traffic between the peered VPCs.
 ________________________________________
 🔹 Limitations of VPC Peering
 •	No Transitive Peering: If VPC A is peered with VPC B, and VPC B is peered with VPC C, A cannot communicate with C unless a direct peering connection exists.
