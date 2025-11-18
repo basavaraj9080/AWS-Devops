@@ -244,6 +244,8 @@ Add specific CIDR routes for the peered VPC.
 
 ### **Transit Gateway**
 
+https://github.com/basavaraj9080/AWS-Devops/blob/main/VPC/vpc%20peering.md
+
 Route using TGW attachment IDs.
 
 Interview Tip:
