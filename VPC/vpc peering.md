@@ -16,7 +16,7 @@ Rules:
 3.	Need to allow ICMP for inbound traffic for private server connection in Security group.
 4.	Configure route table entry in both VPC’s 
 VPC Peering in AWS (Amazon Web Services) is a networking connection between two Amazon Virtual Private Clouds (VPCs) that enables them to communicate privately as if they were part of the same network.
-🔹 Key Points of VPC Peering:
+##**🔹 Key Points of VPC Peering:**
 1.	Direct Communication: VPCs can communicate using private IP addresses without requiring a VPN or internet gateway.
 2.	Cross-Region & Same-Region: Peering can be set up within the same AWS region or across different regions (Inter-Region VPC Peering).
 3.	One-to-One Relationship: Each peering connection is between two VPCs only (no transitive peering).
