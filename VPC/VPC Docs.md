@@ -180,6 +180,35 @@ Explaining why NAT Gateway should be deployed **per AZ** is important — cross-
 
 Route tables determine how traffic flows in/out of subnets.
 
+🚦 What is a Route Table in AWS?
+
+A Route Table contains a set of rules—called routes—that determine how network traffic flows inside a VPC.
+
+Think of it like a map that tells your subnet:
+👉 “Where should this traffic go?”
+
+Every subnet must be associated with one route table.
+
+🧩 Why Route Tables Are Needed
+
+    Route tables control:
+
+      Internet access
+
+      Within-VPC communication
+
+      Communication between subnets
+
+      VPC peering
+
+      NAT Gateway routing
+
+      On-prem connectivity (VPN / Direct Connect)
+
+      Transit Gateway routing
+
+      Without route tables, nothing knows where to send traffic.
+
 ### **Public Subnet Route Table**
 
 ```
@@ -189,10 +218,25 @@ Route tables determine how traffic flows in/out of subnets.
 ### **Private Subnet Route Table**
 
 For outbound internet:
+No inbound from the internet.
 
 ```
 0.0.0.0/0 → nat-gw
 ```
+
+### **🔹 How Route Tables Work (Simple Explanation)**
+
+- An EC2 instance sends a packet.
+
+Packet looks at the subnet’s associated route table.
+
+Route table checks:
+
+Is the destination IP inside the VPC? → Send via local route
+
+Is it external? → Follow matching route (IGW/NAT/VPN/etc.)
+
+Traffic reaches the correct target.
 
 ### **VPC Peering**
 
