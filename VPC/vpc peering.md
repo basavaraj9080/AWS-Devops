@@ -105,19 +105,20 @@ ________________________________________
 •	Lower latency than internet-based connections but higher than same-region peering.
 ________________________________________
 🔹 Advanced VPC Peering Interview Questions
-8. When would you choose VPC Peering over AWS Transit Gateway?
-✔ Use VPC Peering for few-to-few VPC connections (simpler, cheaper).
-✔ Use AWS Transit Gateway for many-to-many VPC connections (scalable, centralized routing).
-9. What is the difference between VPC Peering and AWS PrivateLink?
-Feature	VPC Peering	AWS PrivateLink
-Type of Connection	Private Network	Service-to-service (endpoint)
-Transitive Networking	❌ No	✅ Yes
-Security	Full VPC Access	Limited to specific services
-Cost	No additional charges	Costs per endpoint
-10. How do you secure a VPC Peering connection?
-✅ Restrict traffic using Security Groups & Network ACLs.
-✅ Use IAM Policies to control peering connection permissions.
-✅ Regularly monitor VPC flow logs for unwanted traffic.
+
+ 8. When would you choose VPC Peering over AWS Transit Gateway?
+   ✔ Use VPC Peering for few-to-few VPC connections (simpler, cheaper).
+   ✔ Use AWS Transit Gateway for many-to-many VPC connections (scalable, centralized routing).
+ 9. What is the difference between VPC Peering and AWS PrivateLink?
+   Feature	VPC Peering	AWS PrivateLink
+   Type of Connection	Private Network	Service-to-service (endpoint)
+   Transitive Networking	❌ No	✅ Yes
+   Security	Full VPC Access	Limited to specific services
+   Cost	No additional charges	Costs per endpoint
+ 10. How do you secure a VPC Peering connection?
+ ✅ Restrict traffic using Security Groups & Network ACLs.
+ ✅ Use IAM Policies to control peering connection permissions.
+ ✅ Regularly monitor VPC flow logs for unwanted traffic.
 ________________________________________
 Would you like more real-world scenarios or hands-on questions? 🚀
 
