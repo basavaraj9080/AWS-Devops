@@ -228,15 +228,15 @@ No inbound from the internet.
 
 - An EC2 instance sends a packet.
 
-Packet looks at the subnet’s associated route table.
+- Packet looks at the subnet’s associated route table.
 
-Route table checks:
+- Route table checks:
 
-Is the destination IP inside the VPC? → Send via local route
+- Is the destination IP inside the VPC? → Send via local route
 
-Is it external? → Follow matching route (IGW/NAT/VPN/etc.)
+- Is it external? → Follow matching route (IGW/NAT/VPN/etc.)
 
-Traffic reaches the correct target.
+- Traffic reaches the correct target.
 
 ### **VPC Peering**
 
