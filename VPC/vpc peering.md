@@ -34,29 +34,44 @@ ________________________________________
 ________________________________________
 ## 🔹 How to Set Up VPC Peering?
 1.	Create a Peering Connection:
-## o	Go to AWS VPC Console > Peering Connections > Create Peering Connection
-## o	Select the requester VPC and the acceptor VPC
-2.	Accept the Peering Request:
-## o	The owner of the acceptor VPC must accept the request.
-3.	Update Route Tables:
-## o	Modify Route Tables in both VPCs to allow traffic between them.
-4.	Configure Security Groups (SG) & Network ACLs:
-## o	Ensure that Security Groups (SGs) & Network ACLs allow traffic between the peered VPCs.
+ 
+ o	Go to AWS VPC Console > Peering Connections > Create Peering Connection
+
+ o	Select the requester VPC and the acceptor VPC
+
+3.	Accept the Peering Request:
+ 
+ o	The owner of the acceptor VPC must accept the request.
+
+4.	Update Route Tables:
+
+ o	Modify Route Tables in both VPCs to allow traffic between them.
+
+5.	Configure Security Groups (SG) & Network ACLs:
+
+ o	Ensure that Security Groups (SGs) & Network ACLs allow traffic between the peered VPCs.
 ________________________________________
-🔹 Limitations of VPC Peering
+## 🔹 Limitations of VPC Peering
+
 •	No Transitive Peering: If VPC A is peered with VPC B, and VPC B is peered with VPC C, A cannot communicate with C unless a direct peering connection exists.
+
 •	No Overlapping IP Ranges: VPCs with overlapping CIDR blocks cannot be peered.
+
 •	Route Table Updates Required: Unlike AWS Transit Gateway, VPC Peering requires manual updates to route tables.
+
 ________________________________________
-🔹 Alternatives to VPC Peering
+## 🔹 Alternatives to VPC Peering
+
 •	AWS Transit Gateway (TGW): For many-to-many VPC connectivity in a hub-and-spoke model.
+
 •	AWS PrivateLink: For connecting services across different VPCs without exposing full network access.
+
 •	Site-to-Site VPN: For secure connectivity between on-premises networks and AWS VPCs.
-Would you like a hands-on guide to setting up a VPC Peering connection in AWS? 🚀
+
 
 Here’s an experience-level interview guide on VPC Peering in AWS, with questions ranging from basic to advanced.
 ________________________________________
-🔹 Basic VPC Peering Interview Questions
+## 🔹 Basic VPC Peering Interview Questions
 1. What is VPC Peering in AWS?
 👉 Answer: VPC Peering is a private network connection between two AWS Virtual Private Clouds (VPCs) that allows direct communication using private IP addresses.
 2. How do you create a VPC Peering connection?
