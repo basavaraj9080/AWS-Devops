@@ -1,9 +1,13 @@
-  
-  
- 
 
-Assignment:
- 
+<img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/93ef12d2-8f32-4b58-a96b-6f48c99796e4" />
+
+<img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/e496c243-a11f-4e22-b39c-640451fc8b50" />
+
+<img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/3490c806-9cbc-425a-9c02-946012106aea" />
+
+<img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/91b756f0-523c-4320-be48-b04c89fd6b52" />
+
+<img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/c3375cf2-466d-4ca6-b309-c450fd8267be" />
 
 Making the communication b/w 2 VPC’s
 Rules:
@@ -99,6 +103,11 @@ Cost	No additional charges	Costs per endpoint
 ✅ Regularly monitor VPC flow logs for unwanted traffic.
 ________________________________________
 Would you like more real-world scenarios or hands-on questions? 🚀
+
+Assignment
+
+<img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/581729d3-169c-4874-bf15-5a9136d7a78a" />
+
 
 
 
