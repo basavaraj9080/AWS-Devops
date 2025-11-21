@@ -232,11 +232,29 @@ No inbound from the internet.
 
 - Route table checks:
 
-- Is the destination IP inside the VPC? → Send via local route
+    - Is the destination IP inside the VPC? → Send via local route
 
-- Is it external? → Follow matching route (IGW/NAT/VPN/etc.)
+    - Is it external? → Follow matching route (IGW/NAT/VPN/etc.)
 
 - Traffic reaches the correct target.
+
+
+---
+## 🔹 Targets You Can Have in a Route Table
+
+-- Internet Gateway
+
+-- NAT Gateway
+
+-- Egress-only Internet Gateway
+
+-- VPC Peering connection
+
+-- Transit Gateway
+
+-- Virtual Private Gateway (VPN)
+
+-- Local route (auto-created)
 
 ### **VPC Peering**
 
