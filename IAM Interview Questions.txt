@@ -1,3 +1,5 @@
+https://jeevabyte.medium.com/aws-iam-a-complete-view-with-real-world-scenarios-1930c3f85d06
+
 Got it 👍 — you mentioned IAM.
 Let me break it down in the AWS DevOps context, since IAM (Identity and Access Management) is one of the most important AWS services.
 ________________________________________
