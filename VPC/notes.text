@@ -1,0 +1,92 @@
+👉 Do you also want me to prepare a similar one-pager for VPC (with Terraform)? (That’s the 2nd most asked topic in DevOps interviews after IAM).
+YES:
+
+Awesome 🚀 Here’s your one-page VPC + Terraform Interview Cheat Sheet — perfect for 5 Yrs DevOps + Terraform interview prep.
+________________________________________
+🟢 VPC + Terraform Cheat Sheet (Interview Quick Notes)
+________________________________________
+🔹 VPC Basics (Easy Formula → C-SING-RN)
+    •	C → CIDR (IP range, e.g., 10.0.0.0/16)
+    •	S → Subnets (divide VPC into smaller networks: public/private)
+    •	I → Internet Gateway (IGW) (public internet access)
+    •	N → NAT Gateway (private subnet → internet)
+    •	G → Route Tables (define traffic flow)
+    •	R → Routes (rules inside route tables)
+    •	N → NACL & Security Groups (control inbound/outbound traffic)
+    👉 Interview Line: “VPC is your private data center inside AWS, controlled with subnets, routing, and security.”
+________________________________________
+🔹 Diagram (Quick Whiteboard)
+                +-------------------+
+                |      VPC          | (CIDR: 10.0.0.0/16)
+                +-------------------+
+       Public Subnet       Private Subnet
+     (10.0.1.0/24)        (10.0.2.0/24)
+          | IGW                | NAT GW
+          |                    |
+      Internet           Outbound Only
+________________________________________
+🔹 Best Practices
+    ✅ Use /16 CIDR for VPC to allow flexibility
+    ✅ Separate public and private subnets
+    ✅ Deploy resources in Multi-AZ for HA
+    ✅ Use NAT Gateway for secure private subnet internet access
+    ✅ Always enable Flow Logs for monitoring
+    ✅ Apply least privilege Security Groups
+________________________________________
+🔹 Terraform Snippets
+    1. Create a VPC
+    resource "aws_vpc" "main" {
+      cidr_block           = "10.0.0.0/16"
+      enable_dns_support   = true
+      enable_dns_hostnames = true
+      tags = { Name = "main-vpc" }
+    }
+    2. Public Subnet
+    resource "aws_subnet" "public" {
+      vpc_id            = aws_vpc.main.id
+      cidr_block        = "10.0.1.0/24"
+      availability_zone = "ap-south-1a"
+      map_public_ip_on_launch = true
+    }
+    3. Internet Gateway + Route
+    resource "aws_internet_gateway" "igw" {
+      vpc_id = aws_vpc.main.id
+    }
+    
+    resource "aws_route_table" "public_rt" {
+      vpc_id = aws_vpc.main.id
+      route {
+        cidr_block = "0.0.0.0/0"
+        gateway_id = aws_internet_gateway.igw.id
+      }
+    }
+    
+    resource "aws_route_table_association" "public_assoc" {
+      subnet_id      = aws_subnet.public.id
+      route_table_id = aws_route_table.public_rt.id
+    }
+    4. NAT Gateway (for Private Subnet)
+    resource "aws_eip" "nat" {
+      vpc = true
+    }
+    
+    resource "aws_nat_gateway" "nat" {
+      allocation_id = aws_eip.nat.id
+      subnet_id     = aws_subnet.public.id
+    }
+________________________________________
+🔹 Common Interview Q&A (5 Yrs + Terraform)
+    Q1. Difference between Security Groups and NACLs?
+    👉 SG = stateful, instance-level firewall.
+    👉 NACL = stateless, subnet-level firewall.
+    Q2. How do you design a highly available VPC?
+    👉 Multi-AZ subnets, NAT Gateways in each AZ, redundant route tables.
+    Q3. How do you connect on-prem to AWS VPC?
+    👉 VPN, Direct Connect, or Transit Gateway.
+    Q4. What’s the Terraform advantage in VPC setup?
+    👉 Infrastructure as Code → reusable, version-controlled, automated.
+    Q5. How do you secure private subnets?
+    👉 No IGW, route via NAT GW, least privilege SGs, monitoring via Flow Logs.
+________________________________________
+✅ With this cheat sheet, you’ll be able to draw, explain, and code a VPC setup confidently in interviews.
+________________________________________
