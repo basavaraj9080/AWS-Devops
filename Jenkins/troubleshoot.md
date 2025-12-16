@@ -30,10 +30,10 @@ This is **exactly what interviewers expect** from a DevOps/SRE candidate.
 
 **Answer:**
 
-> “First, I check the Jenkins service status using `systemctl status jenkins`. <br>
-> If it’s down, I immediately check logs using `journalctl -u jenkins` or `jenkins.log` to identify Java errors, port issues, permission problems, or disk space errors. <br>
-> I verify the Java version because Jenkins requires a supported Java runtime. <br>
-> Then I check if the Jenkins port (default 8080) is already in use, confirm firewall or AWS security group rules, and ensure Jenkins home directory permissions are correct. <br>
+> “First, I check the Jenkins service status using `systemctl status jenkins`. 
+> If it’s down, I immediately check logs using `journalctl -u jenkins` or `jenkins.log` to identify Java errors, port issues, permission problems, or disk space errors. 
+> I verify the Java version because Jenkins requires a supported Java runtime. 
+> Then I check if the Jenkins port (default 8080) is already in use, confirm firewall or AWS security group rules, and ensure Jenkins home directory permissions are correct. 
 > After fixing the root cause, I restart Jenkins and confirm the service is running.”
 
 This answer is **short, confident, and senior-level**.
