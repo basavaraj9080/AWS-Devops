@@ -71,11 +71,11 @@ This line makes you sound **experienced**.
 
 If you want next, I can give you:
 
-✅ **Jenkins Down – Real Interview Scenarios & Answers**
-✅ **CI/CD Pipeline Failure Troubleshooting**
-✅ **Jenkins Plugin Crash Recovery**
-✅ **Jenkins HA / Backup & Restore**
-✅ **AWS + Jenkins Production Setup Questions**
+✅ **Jenkins Down – Real Interview Scenarios & Answers** <br>
+✅ **CI/CD Pipeline Failure Troubleshooting** <br>
+✅ **Jenkins Plugin Crash Recovery** <br>
+✅ **Jenkins HA / Backup & Restore** <br>
+✅ **AWS + Jenkins Production Setup Questions** <br>
 
 Just tell me what you want next 🚀
 
