@@ -11,14 +11,14 @@ I’ll do two things to add value:
 Your steps cover **95% of real Jenkins downtime issues**:
 
 ✔ Service status <br>
-✔ Logs (most important)
-✔ Java compatibility
-✔ Port conflicts
-✔ Disk space
-✔ Firewall / Security Groups
-✔ Permissions
-✔ Config validation
-✔ Restart & verification
+✔ Logs (most important) <br>
+✔ Java compatibility <br>
+✔ Port conflicts <br>
+✔ Disk space <br>
+✔ Firewall / Security Groups <br>
+✔ Permissions <br>
+✔ Config validation <br>
+✔ Restart & verification <br>
 
 This is **exactly what interviewers expect** from a DevOps/SRE candidate.
 
