@@ -10,7 +10,7 @@ I’ll do two things to add value:
 
 Your steps cover **95% of real Jenkins downtime issues**:
 
-✔ Service status
+✔ Service status <br>
 ✔ Logs (most important)
 ✔ Java compatibility
 ✔ Port conflicts
