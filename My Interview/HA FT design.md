@@ -186,3 +186,9 @@ Lower **RPO (Recovery Point Objective)**
 * AWS failure scenario walkthrough
 
 Just tell me 👍
+
+<img width="1024" height="1536" alt="image" src="https://github.com/user-attachments/assets/5d6397d8-fed8-4c42-b0cc-632aa458f2bc" />
+
+
+<img width="1024" height="1536" alt="image" src="https://github.com/user-attachments/assets/c3a63877-ba16-4436-a949-552ec415c3a7" />
+
