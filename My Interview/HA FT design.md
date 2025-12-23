@@ -187,7 +187,7 @@ Lower **RPO (Recovery Point Objective)**
 
 Just tell me 👍
 
-<img width="1000" height="1000" alt="image" src="https://github.com/user-attachments/assets/5d6397d8-fed8-4c42-b0cc-632aa458f2bc" />
+<img width="1000" height="1000" alt="image" src="https://github.com/user-attachments/assets/5d6397d8-fed8-4c42-b0cc-632aa458f2bc" /> <br>
 
 
 
