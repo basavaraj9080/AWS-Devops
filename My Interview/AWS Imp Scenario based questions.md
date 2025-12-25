@@ -1,4 +1,4 @@
-**1. Explain how Auto Scaling works. What policies have you used?** <br>
+# **1. Explain how Auto Scaling works. What policies have you used?** <br>
 
 Here is a **clear, simple, and interview-ready explanation** of **how Auto Scaling works in AWS**, including the **policies commonly used**, with examples you can confidently explain.
 
