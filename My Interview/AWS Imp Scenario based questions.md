@@ -707,10 +707,10 @@ No application changes required.
 
 # Best Practices
 
-✅ Enable Multi-AZ for **production databases**
-✅ Use Read Replicas **with Multi-AZ** if needed
-✅ Monitor failover via CloudWatch & RDS events
-❌ Don’t use Multi-AZ for analytics scaling
+✅ Enable Multi-AZ for **production databases** <br>
+✅ Use Read Replicas **with Multi-AZ** if needed <br>
+✅ Monitor failover via CloudWatch & RDS events <br>
+❌ Don’t use Multi-AZ for analytics scaling <br>
 
 ---
 
