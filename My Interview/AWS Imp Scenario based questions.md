@@ -732,3 +732,182 @@ If you want, I can also:
 Draw Multi-AZ RDS architecture diagram <br>
 <img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/891e17df-8bde-4397-bc3a-d720f087b8b4" />
 
+
+---
+---
+
+# **Parameter Store vs Secrets Manager?** <br>
+Here is a **clear, side-by-side comparison of AWS Systems Manager Parameter Store vs AWS Secrets Manager**, explained in **simple terms, real use cases, and interview-ready points**.
+
+---
+
+# Parameter Store vs Secrets Manager
+
+## 1️⃣ AWS Systems Manager Parameter Store
+
+### What it is
+
+* A **key-value storage service** for configuration data
+* Can store **plain text or encrypted values**
+* Part of **AWS Systems Manager**
+
+### Typical Data Stored
+
+* Application configuration
+* Environment variables
+* Database hostnames
+* Feature flags
+* Non-rotating secrets
+
+### Encryption
+
+* Optional **KMS encryption** (SecureString)
+
+### Pricing
+
+* **Free** for Standard parameters
+* Advanced parameters have a low cost
+
+### Key Features
+
+* Hierarchical structure (`/prod/db/endpoint`)
+* IAM-based access control
+* Versioning
+* No automatic rotation
+
+---
+
+## 2️⃣ AWS Secrets Manager
+
+### What it is
+
+* A **managed service specifically for secrets**
+* Designed for **credentials and sensitive data**
+
+### Typical Data Stored
+
+* Database credentials
+* API keys
+* OAuth tokens
+* Third-party service secrets
+
+### Encryption
+
+* **Always encrypted** using KMS
+
+### Pricing
+
+* **Paid service**
+* Charged per secret and per API call
+
+### Key Features
+
+* **Automatic secret rotation**
+* Native integration with:
+
+  * RDS
+  * Aurora
+  * Redshift
+* Fine-grained access via IAM
+* Built-in auditing with CloudTrail
+
+---
+
+## 3️⃣ Side-by-Side Comparison
+
+| Feature            | Parameter Store   | Secrets Manager   |
+| ------------------ | ----------------- | ----------------- |
+| Purpose            | Config management | Secret management |
+| Encryption         | Optional          | Mandatory         |
+| Automatic Rotation | ❌ No              | ✅ Yes             |
+| Cost               | Mostly free       | Paid              |
+| Max Size           | 4 KB (Standard)   | 64 KB             |
+| Integration        | SSM, EC2, Lambda  | RDS, Lambda, ECS  |
+| Versioning         | Basic             | Advanced          |
+| Audit Logs         | Limited           | Full (CloudTrail) |
+
+---
+
+## 4️⃣ When to Use What?
+
+### ✅ Use Parameter Store when:
+
+* Storing **non-sensitive configs**
+* Managing environment variables
+* You want a **free solution**
+* No need for automatic rotation
+
+**Example:**
+
+```
+/prod/app/log-level = INFO
+/prod/app/endpoint = api.example.com
+```
+
+---
+
+### ✅ Use Secrets Manager when:
+
+* Storing **passwords or API keys**
+* Need **automatic rotation**
+* Compliance/security requirements
+* Production databases
+
+**Example:**
+
+```
+DB username + password
+Stripe API key
+OAuth tokens
+```
+
+---
+
+## 5️⃣ Real-World Architecture Example
+
+```
+EC2 / Lambda
+   │
+   ├── Parameter Store → App configs
+   │
+   └── Secrets Manager → DB credentials
+```
+
+This is a **best-practice setup**.
+
+---
+
+## 6️⃣ Interview One-Liner
+
+> **Parameter Store** is for configuration values,
+> **Secrets Manager** is for sensitive credentials with rotation.
+
+---
+
+## 7️⃣ Common Interview Traps
+
+❌ “Parameter Store is same as Secrets Manager” → ❌ Wrong
+❌ “Secrets Manager is free” → ❌ Wrong
+✅ Secrets Manager = security + rotation + cost
+✅ Parameter Store = simple + config + low cost
+
+---
+
+## 8️⃣ Exam Tips (AWS Certified)
+
+* **Rotation required? → Secrets Manager**
+* **Cost-sensitive configs? → Parameter Store**
+* **Database credentials? → Secrets Manager**
+* **App environment variables? → Parameter Store**
+
+---
+
+If you want, I can also:
+
+* Provide **Terraform examples**
+* Show **IAM policies**
+* Explain **secret rotation flow**
+* Compare **Vault vs AWS Secrets**
+
+Just tell me 👍
+
