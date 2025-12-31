@@ -727,7 +727,7 @@ If you want, I can also:
 * Compare **Aurora vs RDS Multi-AZ**
 * Provide **exam questions**
 
-Just tell me 👍
+<head> Just tell me 👍 </head>
 <br>
 Draw Multi-AZ RDS architecture diagram <br>
 <img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/891e17df-8bde-4397-bc3a-d720f087b8b4" />
