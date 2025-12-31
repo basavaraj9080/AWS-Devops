@@ -741,8 +741,6 @@ Here is a **clear, side-by-side comparison of AWS Systems Manager Parameter Stor
 
 ---
 
-# Parameter Store vs Secrets Manager
-
 ## 1️⃣ AWS Systems Manager Parameter Store
 
 ### What it is
