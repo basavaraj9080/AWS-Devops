@@ -1,4 +1,4 @@
-# **We are working on a banking project that includes a loan application workflow. In this workflow, if one process fails, we need to ensure it does not impact other processes. How can this be handled effectively in a distributed architecture?
+# We are working on a banking project that includes a loan application workflow. In this workflow, if one process fails, we need to ensure it does not impact other processes. How can this be handled effectively in a distributed architecture?
 
 Ah! Now we’re talking about **real-world distributed systems design** in banking — a very common scenario in **microservices**. Let’s walk through it carefully.
 
