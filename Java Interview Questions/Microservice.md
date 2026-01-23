@@ -567,6 +567,10 @@ This will be **ready to run locally and deploy to EKS**.
 
 Do you want me to generate that full skeleton?
 
+</br>
+
+
+
 loan-application-system/
 ├── loan-application-service/
 │   ├── src/main/java/com/bank/loanapp
