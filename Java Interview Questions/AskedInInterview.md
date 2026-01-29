@@ -529,12 +529,6 @@ CompletableFuture
 ---
 
 ## **4. Why we use static method in Functional Inteface?** </br?
-Good question — this is **very commonly asked in interviews** 👍
-Here’s a **clear, notes-style explanation** with *why + purpose + example*.
-
----
-
-# Why do we use **static methods** in a Functional Interface?
 
 ## 🔹 Short Answer (Interview Line)
 
@@ -650,7 +644,164 @@ Comparator<Integer> comp = Comparator.naturalOrder();
 
 ---
 
-What is Optional class in java-8?
+## **5. What is Optional class in java-8?** </br>
+## 🔹 Definition
+
+`Optional` is a **container object** introduced in Java-8 that may or may not contain a **non-null value**.
+It is used to **avoid `NullPointerException`** and make the absence of a value explicit.
+
+📦 Package: `java.util`
+
+---
+
+## 🔹 Why Optional was introduced?
+
+Before Java-8:
+
+* Methods returned `null`
+* Developers forgot to check null
+* Result → `NullPointerException`
+
+Java-8 solution:
+
+* Return `Optional<T>` instead of `T`
+* Forces the caller to **handle absence safely**
+
+---
+
+## 🔹 Simple Example
+
+```java
+Optional<String> name = Optional.ofNullable(getName());
+```
+
+Instead of:
+
+```java
+String name = getName(); // may cause NPE
+```
+
+---
+
+## 🔹 How Optional works
+
+* If value exists → Optional contains it
+* If value is absent → Optional is empty
+* No direct `null` access
+
+---
+
+## 🔹 Creating Optional Objects
+
+### 1️⃣ `Optional.of()`
+
+```java
+Optional<String> opt = Optional.of("Java");
+```
+
+⚠️ Throws `NullPointerException` if value is null
+
+---
+
+### 2️⃣ `Optional.ofNullable()`
+
+```java
+Optional<String> opt = Optional.ofNullable(null);
+```
+
+✔ Safe for null values
+
+---
+
+### 3️⃣ `Optional.empty()`
+
+```java
+Optional<String> opt = Optional.empty();
+```
+
+---
+
+## 🔹 Important Methods of Optional
+
+| Method          | Purpose                                    |
+| --------------- | ------------------------------------------ |
+| `isPresent()`   | Checks if value exists                     |
+| `ifPresent()`   | Executes logic if value exists             |
+| `get()`         | Gets value (not recommended without check) |
+| `orElse()`      | Returns default value                      |
+| `orElseGet()`   | Lazy default value                         |
+| `orElseThrow()` | Throws exception if empty                  |
+
+---
+
+## 🔹 Example Usage
+
+```java
+Optional<String> name = Optional.ofNullable(getName());
+
+String result = name.orElse("Default Name");
+```
+
+---
+
+## 🔹 `orElse()` vs `orElseGet()`
+
+| orElse()        | orElseGet()            |
+| --------------- | ---------------------- |
+| Always executed | Executed only if empty |
+| Less efficient  | More efficient         |
+
+---
+
+## 🔹 Best Practices
+
+✔ Use Optional as **return type**
+✔ Use `orElseGet()` for expensive operations
+❌ Do NOT use Optional for fields
+❌ Do NOT use Optional for method parameters
+
+---
+
+## 🔹 Common Interview Questions
+
+### ❓ Why Optional should not be used as a field?
+
+* Not Serializable
+* Breaks JavaBean conventions
+* Adds unnecessary complexity
+
+---
+
+### ❓ Does Optional eliminate NullPointerException completely?
+
+❌ No
+✔ It reduces the chances if used properly
+
+---
+
+## 🔹 Real-World Java API Example
+
+```java
+Optional<T> findById(ID id); // Spring Data JPA
+```
+
+---
+
+## 🔹 Advantages of Optional
+
+* Prevents NullPointerException
+* Improves code readability
+* Forces null handling
+* Better API design
+
+---
+
+## 🔹 One-Line Interview Answer ⭐
+
+> *Optional is a container object introduced in Java-8 to represent the presence or absence of a value and to avoid NullPointerException by enforcing explicit null handling.*
+
+---
+
 What is the difference between Optional class methods?
 	orElse(defaultValue);  // returns value or default
 	orElseGet(() -> val);  // lazy default
