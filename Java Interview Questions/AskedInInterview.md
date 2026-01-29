@@ -1258,10 +1258,842 @@ System.gc();  // Entry may be removed
 * Can WeakHashMap entries disappear automatically?
 
 ---
-Have you ever faced collision, and how will you fix it? 
-What is the difference between @Lazy and @Eager, when should each be used?
-What is @Autowiring when we use @Autowiring and Constructor injection, which one is better?
-What is the difference between @Transaction annotaion on class level and method level?
+## **10. Have you ever faced collision, and how will you fix it?** </br> 
+
+## 1️⃣ What is a **collision**?
+
+A **collision occurs in a hash-based collection** (like `HashMap`) when **two keys produce the same hash code** and get mapped to the **same bucket**.
+
+* Every key in a `HashMap` is hashed using `key.hashCode() % capacity`.
+* If two keys have the same hash, they collide in the same bucket.
+
+---
+
+### Example
+
+```java
+Map<Integer, String> map = new HashMap<>();
+
+map.put(1, "A");
+map.put(17, "B"); // Suppose HashMap capacity is 16, 1 % 16 = 1 and 17 % 16 = 1
+```
+
+* Both keys 1 and 17 go to the **same bucket** → collision.
+
+---
+
+## 2️⃣ How **HashMap handles collisions**
+
+### Java 8 Mechanism
+
+1. **Chaining** (Linked List)
+
+   * Each bucket holds a linked list of entries with same hash.
+2. **Treeify** (Red-Black Tree)
+
+   * If a bucket’s linked list grows beyond **8 entries**, it converts into a **balanced tree**.
+   * Improves lookup time from **O(n)** to **O(log n)**.
+
+---
+
+### Bucket Example
+
+```
+Bucket 1:
+[Key=1, Value=A] -> [Key=17, Value=B] -> [Key=33, Value=C]
+```
+
+* Before treeify → linked list
+* After 8 entries → tree
+
+---
+
+## 3️⃣ How **to fix collisions** / Avoid them
+
+### ✅ 1. Good hash function
+
+* Override `hashCode()` properly for custom objects.
+* Example:
+
+```java
+@Override
+public int hashCode() {
+    return Objects.hash(id, name);
+}
+```
+
+### ✅ 2. Use `equals()` correctly
+
+* Two keys with same hash should be compared with `equals()` to distinguish them.
+
+### ✅ 3. Adjust **initial capacity & load factor**
+
+* Default HashMap: 16 buckets, 0.75 load factor
+* If collisions are frequent, **increase initial capacity**.
+
+```java
+Map<Integer, String> map = new HashMap<>(32, 0.75f);
+```
+
+### ✅ 4. Java 8 Treeify
+
+* Let HashMap automatically convert long chains into a **balanced tree** (handled internally).
+
+---
+
+## 4️⃣ Interview Tips / Answers
+
+### Example Interview Answer
+
+> “Yes, collisions occur in hash-based data structures when two keys have the same hash code. In Java 8 HashMap, collisions are handled using **chaining** with linked lists, and when a bucket has more than 8 entries, it’s converted to a **Red-Black tree** to improve performance.
+> To avoid collisions, we can implement a **good hashCode()**, properly override `equals()`, and tune the HashMap’s **initial capacity and load factor**.”
+
+---
+
+## 5️⃣ Bonus Notes
+
+* **HashMap**: Handles collisions internally, no need for manual fixing.
+* **ConcurrentHashMap**: Uses segment-level or bucket-level locks; collision handling is similar.
+* **TreeMap**: Uses **natural ordering or comparator**; no hash function, so collision does not exist.
+
+---
+
+## **11. What is the difference between @Lazy and @Eager, when should each be used?** </br>
+# Difference between **@Lazy** and **@Eager**
+
+> ⚠️ Important first note (interview trap):
+
+* Spring has **`@Lazy` annotation**
+* Spring does **NOT** have an `@Eager` annotation
+  👉 *Eager loading is the **default behavior***
+
+So when interviewers say **@Eager**, they really mean **eager initialization (default)**.
+
+---
+
+## 1️⃣ **@Lazy**
+
+### What is `@Lazy`?
+
+* Tells Spring to **delay bean creation**
+* Bean is created **only when it is first requested**
+
+### Example
+
+```java
+@Component
+@Lazy
+public class EmailService {
+    public EmailService() {
+        System.out.println("EmailService initialized");
+    }
+}
+```
+
+* Bean is **NOT created at application startup**
+* Created only when injected or accessed
+
+---
+
+### `@Lazy` on Injection
+
+```java
+@Autowired
+@Lazy
+private EmailService emailService;
+```
+
+* Bean loads only when used
+
+---
+
+## 2️⃣ **Eager Initialization (Default)**
+
+### What is Eager Loading?
+
+* Bean is created **during application startup**
+* Default behavior for all Spring beans
+
+### Example
+
+```java
+@Component
+public class PaymentService {
+    public PaymentService() {
+        System.out.println("PaymentService initialized");
+    }
+}
+```
+
+* Bean loads **as soon as Spring context starts**
+
+---
+
+## 3️⃣ Key Differences (Interview Table)
+
+| Feature           | @Lazy                | Eager (Default)        |
+| ----------------- | -------------------- | ---------------------- |
+| Bean Creation     | On first use         | On application startup |
+| Startup Time      | Faster               | Slower                 |
+| Memory Usage      | Lower initially      | Higher                 |
+| First Access Time | Slight delay         | No delay               |
+| Default           | ❌ No                 | ✅ Yes                  |
+| Use Case          | Heavy/optional beans | Core beans             |
+
+---
+
+## 4️⃣ When Should You Use **@Lazy**?
+
+✔ Heavy objects (DB connections, report generators)
+✔ Optional or rarely used beans
+✔ Improve application startup time
+✔ Break **circular dependencies**
+✔ Microservices with faster boot requirement
+
+---
+
+## 5️⃣ When Should You Use **Eager Initialization**?
+
+✔ Core business services
+✔ Beans required at startup
+✔ Fail-fast (detect errors early)
+✔ Performance-critical first request
+
+---
+
+## 6️⃣ Real Interview Scenarios
+
+### Scenario 1: **Microservice Startup Optimization**
+
+* Use `@Lazy` for:
+
+  * Email services
+  * External API clients
+* Keep core services eager
+
+---
+
+### Scenario 2: **Circular Dependency Fix**
+
+```java
+@Component
+public class A {
+    @Autowired
+    @Lazy
+    private B b;
+}
+```
+
+* Prevents circular dependency exception
+
+---
+
+### Scenario 3: **Fail-Fast Requirement**
+
+* Payment, Security, Auth services → eager
+* Fail application startup if misconfigured
+
+---
+
+## 7️⃣ Common Interview Follow-ups
+
+### Q: Does `@Lazy` make bean thread-unsafe?
+
+❌ No, Spring still manages singleton safely.
+
+---
+
+### Q: Can we use `@Lazy` at configuration level?
+
+✅ Yes
+
+```java
+@Configuration
+@Lazy
+public class AppConfig {}
+```
+
+---
+
+## ⭐ One-Line Interview Answer
+
+> *@Lazy delays bean creation until it’s needed, improving startup time and resource usage, while eager initialization (default) creates beans at application startup to ensure readiness and fail-fast behavior.*
+
+---
+
+If you want next:
+
+* 🔥 `@Lazy vs Prototype`
+* 🧠 Spring bean lifecycle diagram
+* 🎯 Microservices startup optimization checklist
+* ⚔ `@PostConstruct vs @Lazy`
+
+Love this combo 😄 — this is **exactly Spring interview gold**.
+I’ll cover **all 4 topics**, clean, crisp, and **notes-style** so you can revise fast.
+
+---
+
+# 🔥 1️⃣ `@Lazy` vs `@Prototype`
+
+> ⚠️ These solve **different problems** — interviewers check if you mix them up.
+
+---
+
+## 🔹 `@Lazy`
+
+### Purpose
+
+* Controls **WHEN** a bean is created
+
+### Key Points
+
+* Bean created **only when first requested**
+* Default scope = `singleton`
+* Helps reduce startup time
+
+```java
+@Component
+@Lazy
+public class ReportService {}
+```
+
+---
+
+## 🔹 `@Prototype`
+
+### Purpose
+
+* Controls **HOW MANY instances** are created
+
+### Key Points
+
+* New instance created **every time**
+* Bean created immediately when requested
+* Spring does NOT manage full lifecycle
+
+```java
+@Component
+@Scope("prototype")
+public class Task {}
+```
+
+---
+
+## 🔥 Comparison Table
+
+| Feature           | @Lazy               | @Prototype       |
+| ----------------- | ------------------- | ---------------- |
+| Controls          | Initialization time | Instance count   |
+| Bean Instances    | One                 | Multiple         |
+| Startup Load      | Delayed             | Immediate        |
+| Lifecycle Managed | Yes                 | Partial          |
+| Use Case          | Heavy beans         | Stateful objects |
+
+---
+
+## ⭐ Interview Line
+
+> *@Lazy controls bean creation time, while @Prototype controls the number of bean instances.*
+
+---
+
+# 🧠 2️⃣ Spring Bean Lifecycle (Diagram + Steps)
+
+```
+Spring Container Start
+        |
+Instantiate Bean
+        |
+Populate Properties (@Autowired)
+        |
+Aware Interfaces (BeanNameAware, etc.)
+        |
+BeanPostProcessor (before init)
+        |
+@PostConstruct
+        |
+InitializingBean.afterPropertiesSet()
+        |
+BeanPostProcessor (after init)
+        |
+Bean Ready to Use
+        |
+@PreDestroy
+        |
+Destroy Bean
+```
+
+---
+
+## 🔹 Key Notes
+
+* `@PostConstruct` → runs **after dependency injection**
+* `@PreDestroy` → runs **before bean destruction**
+* Prototype beans do NOT get destroy callbacks
+
+---
+
+# 🎯 3️⃣ Microservices Startup Optimization Checklist
+
+### ✅ Use `@Lazy` wisely
+
+* Email, Notification, Report services
+* External API clients
+
+---
+
+### ✅ Avoid heavy startup logic
+
+❌ Long DB calls in constructors
+❌ Blocking network calls in `@PostConstruct`
+
+---
+
+### ✅ Async initialization
+
+```java
+@Async
+@PostConstruct
+public void init() {}
+```
+
+---
+
+### ✅ Reduce component scanning
+
+```java
+@ComponentScan("com.app.service")
+```
+
+---
+
+### ✅ External Config Optimization
+
+* Use config server caching
+* Avoid slow property resolution
+
+---
+
+### ✅ JVM Optimizations
+
+* Container-aware JVM flags
+* Right heap size
+
+---
+
+## ⭐ Interview Line
+
+> *Startup optimization in microservices focuses on lazy loading, async initialization, minimal scanning, and avoiding blocking operations at startup.*
+
+---
+
+# ⚔ 4️⃣ `@PostConstruct` vs `@Lazy`
+
+> ⚠️ Very common confusion — answer carefully.
+
+---
+
+## 🔹 `@PostConstruct`
+
+### What it does
+
+* Runs **after bean creation**
+* Executes initialization logic
+
+```java
+@PostConstruct
+public void init() {
+    loadCache();
+}
+```
+
+---
+
+## 🔹 `@Lazy`
+
+### What it does
+
+* Delays **bean creation itself**
+
+```java
+@Lazy
+@Component
+public class CacheService {}
+```
+
+---
+
+## 🔥 Comparison Table
+
+| Feature        | @PostConstruct      | @Lazy            |
+| -------------- | ------------------- | ---------------- |
+| Purpose        | Init logic          | Delay creation   |
+| Execution Time | After bean creation | Before creation  |
+| Startup Impact | Slower              | Faster           |
+| Controls       | Behavior            | Lifecycle timing |
+
+---
+
+## ⭐ Interview Line
+
+> *@PostConstruct runs initialization logic after bean creation, whereas @Lazy delays the creation of the bean itself.*
+
+---
+
+# 🔥 Final Rapid-Fire Interview Summary
+
+* `@Lazy` → when to create
+* `@Prototype` → how many instances
+* `@PostConstruct` → what to run after creation
+* Microservices startup → lazy + async + minimal scanning
+
+---
+
+
+## **12. What is @Autowired when we use @Autowired and Constructor injection, which one is better?** </br>
+
+# 1️⃣ What is `@Autowired`?
+
+### Definition
+
+`@Autowired` is a Spring annotation used for **dependency injection**.
+It tells Spring:
+
+> “Inject the required bean automatically.”
+
+---
+
+### Example (Field Injection)
+
+```java
+@Component
+public class OrderService {
+
+    @Autowired
+    private PaymentService paymentService;
+}
+```
+
+Spring finds a `PaymentService` bean and injects it.
+
+---
+
+## Ways to Use `@Autowired`
+
+### 🔹 1. Field Injection
+
+```java
+@Autowired
+private UserService userService;
+```
+
+### 🔹 2. Setter Injection
+
+```java
+@Autowired
+public void setUserService(UserService userService) {
+    this.userService = userService;
+}
+```
+
+### 🔹 3. Constructor Injection
+
+```java
+@Component
+public class OrderService {
+
+    private final PaymentService paymentService;
+
+    @Autowired
+    public OrderService(PaymentService paymentService) {
+        this.paymentService = paymentService;
+    }
+}
+```
+
+---
+
+# 2️⃣ What is Constructor Injection?
+
+### Definition
+
+Dependencies are provided through the **constructor**.
+
+> Since Spring 4.3+, **`@Autowired` is optional** if there is **only one constructor**.
+
+---
+
+### Modern Best Practice
+
+```java
+@Component
+public class OrderService {
+
+    private final PaymentService paymentService;
+
+    public OrderService(PaymentService paymentService) {
+        this.paymentService = paymentService;
+    }
+}
+```
+
+---
+
+# 3️⃣ When Should We Use `@Autowired`?
+
+✔ When Spring needs to inject dependencies automatically
+✔ For setter injection (optional dependencies)
+✔ For legacy code
+
+---
+
+# 4️⃣ Constructor Injection vs `@Autowired` (Field Injection)
+
+### 🔥 Interview Comparison Table
+
+| Feature             | Field Injection (@Autowired) | Constructor Injection |
+| ------------------- | ---------------------------- | --------------------- |
+| Immutability        | ❌ No                         | ✅ Yes (`final`)       |
+| Testability         | ❌ Harder                     | ✅ Easier              |
+| Null Safety         | ❌ Possible                   | ✅ Guaranteed          |
+| Readability         | ❌ Hidden dependencies        | ✅ Explicit            |
+| Circular Dependency | ❌ Runtime error              | ✅ Detected early      |
+| Recommended         | ❌ No                         | ✅ Yes                 |
+
+---
+
+# 5️⃣ Which One is Better? ⭐ (Important!)
+
+### ✅ **Constructor Injection is BETTER**
+
+### Why?
+
+1. Makes dependencies **mandatory**
+2. Enables **immutable objects**
+3. Easier unit testing (no Spring context needed)
+4. Catches circular dependencies early
+5. Cleaner, more maintainable code
+
+---
+
+## ⭐ Interview One-Liner
+
+> *Constructor injection is preferred over @Autowired field injection because it ensures immutability, better testability, and makes dependencies explicit.*
+
+---
+
+# 6️⃣ When Field Injection (`@Autowired`) is Acceptable?
+
+✔ Small demo projects
+✔ Legacy applications
+✔ Quick prototypes
+
+But **not recommended for production code**.
+
+---
+
+# 7️⃣ Common Follow-up Interview Questions
+
+### Q: Can constructor injection cause circular dependency?
+
+❌ No — it **fails fast** and exposes the problem early.
+
+---
+
+### Q: Can we use both?
+
+⚠️ Technically yes, but **bad practice**.
+
+---
+
+### Q: What if multiple beans exist?
+
+Use:
+
+```java
+@Qualifier("paypalPayment")
+```
+
+---
+
+# 🔥 Final Summary (Memorize This)
+
+* `@Autowired` injects dependencies
+* Constructor injection is best practice
+* Field injection hides dependencies
+* Spring recommends constructor injection
+
+---
+
+## **13. What is the difference between @Transaction annotaion on class level and method level?** </br>
+Excellent question — this is **very common in Spring + JPA interviews** and many people answer it *partially*.
+Here’s the **complete, interview-ready explanation** 👇
+
+---
+
+# Difference between `@Transactional` at **Class Level** vs **Method Level**
+
+---
+
+## 1️⃣ What is `@Transactional`?
+
+### Definition
+
+`@Transactional` is a Spring annotation that:
+
+* Defines **transaction boundaries**
+* Automatically handles:
+
+  * `BEGIN`
+  * `COMMIT`
+  * `ROLLBACK`
+
+---
+
+## 2️⃣ `@Transactional` at **Class Level**
+
+### What it means
+
+* Applies **to all public methods** of the class
+* Each method runs inside a transaction **by default**
+
+### Example
+
+```java
+@Service
+@Transactional
+public class OrderService {
+
+    public void placeOrder() { }
+
+    public void cancelOrder() { }
+}
+```
+
+✔ Both methods are transactional
+✔ Less boilerplate
+❌ Less fine-grained control
+
+---
+
+## 3️⃣ `@Transactional` at **Method Level**
+
+### What it means
+
+* Applies **only to that specific method**
+* Overrides class-level transaction settings
+
+### Example
+
+```java
+@Service
+public class OrderService {
+
+    @Transactional
+    public void placeOrder() { }
+
+    public void viewOrder() { }
+}
+```
+
+✔ Only `placeOrder()` is transactional
+✔ More control and clarity
+
+---
+
+## 4️⃣ Priority Rule (Very Important ⚠️)
+
+> **Method-level `@Transactional` overrides class-level `@Transactional`**
+
+### Example
+
+```java
+@Service
+@Transactional(readOnly = true)
+public class UserService {
+
+    @Transactional(readOnly = false)
+    public void saveUser() { }
+}
+```
+
+✔ `saveUser()` is **read-write**
+✔ Other methods remain **read-only**
+
+---
+
+## 5️⃣ Key Differences (Interview Table)
+
+| Feature     | Class Level              | Method Level      |
+| ----------- | ------------------------ | ----------------- |
+| Scope       | All public methods       | Single method     |
+| Control     | Broad                    | Fine-grained      |
+| Override    | ❌ Cannot override method | ✅ Overrides class |
+| Readability | Less explicit            | More explicit     |
+| Flexibility | Limited                  | High              |
+
+---
+
+## 6️⃣ When to Use **Class Level**?
+
+✔ All methods require transactions
+✔ Same transaction behavior for all methods
+✔ Cleaner code, less repetition
+
+---
+
+## 7️⃣ When to Use **Method Level**? ⭐
+
+✔ Different methods need different settings
+✔ Some methods are read-only
+✔ Performance tuning (`readOnly = true`)
+✔ Clear transaction intent
+
+👉 **Method-level is generally preferred in real projects**
+
+---
+
+## 8️⃣ Common Interview Traps ⚠️
+
+### ❌ Private methods
+
+`@Transactional` **does NOT work** on private methods
+(Spring uses proxies)
+
+---
+
+### ❌ Self-invocation
+
+```java
+this.save(); // Transaction will NOT start
+```
+
+---
+
+### ❌ Checked exceptions
+
+* Default rollback only for `RuntimeException`
+* Use:
+
+```java
+@Transactional(rollbackFor = Exception.class)
+```
+
+---
+
+## ⭐ Interview One-Liner (Must Remember)
+
+> *Class-level @Transactional applies the same transaction to all public methods, while method-level @Transactional provides fine-grained control and overrides class-level settings.*
+
+---
+
+## 🔥 Real-World Best Practice
+
+* Use **class-level** for default behavior
+* Use **method-level** to override when needed
+
+---
+
 What is intermediate and terminal operator in java-8?
 Can we use immutable object as a key in Map?
 How do you identify this is Singleton patter?
