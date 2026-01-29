@@ -169,9 +169,9 @@ This uses **exactly** the line you mentioned:
 employees.stream().collect(Collectors.groupingBy(Employee::getDept));
 ```
 
-It’s the **modern, concise Java 8 way** to group items by a property.
+# Java 7 version (without Streams)
 
-## **Java 7 version (without Streams)**
+```java
 import java.util.*;
 
 class Employee {
@@ -223,14 +223,20 @@ public class GroupByDeptJava7 {
         }
     }
 }
+```
 
-Output for both:
+---
+
+### Output for both:
+
+```
 HR => [Alice, Charlie]
 Finance => [Bob, David]
 IT => [Eve]
+```
 
+---
 
-If you want:
 
 
 Explian the features of Java-8?
