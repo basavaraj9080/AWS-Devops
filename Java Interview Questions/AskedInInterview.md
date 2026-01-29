@@ -48,7 +48,12 @@ public class Test {
 ihgf@edc#ba
 ```
 </br>
-**Using Stream** </br>
+
+Here’s a **stream-based version** that does the *same thing*:
+👉 **reverse only letters, keep special characters in place**.
+
+## ✅ Stream-based solution (Java 8+)
+
 ```java
 import java.util.*;
 import java.util.stream.*;
@@ -79,9 +84,32 @@ public class Test {
         System.out.println(result);
     }
 }
-
 ```
 
+### ✅ Output
+```
+ihgf@edc#ba
+```
+## 🔍 How this works (quick explanation)
+
+1. **Extract letters**
+
+   ```java
+   a b c d e f g h i
+   ```
+
+2. **Reverse letters**
+
+   ```java
+   i h g f e d c b a
+   ```
+
+3. **Rebuild string**
+
+   * If character is a letter → take next reversed letter
+   * Else → keep special character as-is
+
+---
 	
 Print the departmentwise highest salary? using groupingBy or using map
 
