@@ -8,7 +8,7 @@ Write a program to print second highest employee salary using java 8
 	String input = "abcd@efg#hi"; </br>
 	Output string: ihgf@edc#ba </br>
 
-	public class Test {
+	```public class Test {
 
     public static void main(String[] args) {
         String input = "abcd@efg#hi";
@@ -33,7 +33,7 @@ Write a program to print second highest employee salary using java 8
 
         System.out.println(new String(chars));
     }
-}
+}```
 
 	
 Print the departmentwise highest salary? using groupingBy or using map
