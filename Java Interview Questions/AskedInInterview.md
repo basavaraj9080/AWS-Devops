@@ -1109,7 +1109,155 @@ Map<Integer, String> map = new ConcurrentHashMap<>();
 > *ConcurrentHashMap avoids null to prevent ambiguity in concurrent access, achieves thread safety using CAS and fine-grained locking, and outperforms synchronizedMap by allowing high concurrent access with minimal blocking.*
 
 ---
-What is the difference between LinkedHashMap and WeakHashMap, and when should each be used?
+## **9. What is the difference between LinkedHashMap and WeakHashMap, and when should each be used?** </br>
+Great question — this one **tests both Collections knowledge and JVM understanding** 👍
+Here’s a **clean, interview-ready explanation** with *what + differences + when to use*.
+
+---
+
+# Difference between **LinkedHashMap** and **WeakHashMap**
+
+---
+
+## 🔹 LinkedHashMap
+
+### What is it?
+
+* Subclass of `HashMap`
+* Maintains **order of elements**
+* Order can be:
+
+  * **Insertion order**
+  * **Access order**
+
+### Key Features
+
+* Predictable iteration order
+* Slightly slower than HashMap (extra links)
+* Allows **one null key** and **multiple null values**
+* Not thread-safe
+
+### Internal Structure
+
+* Hash table + **Doubly Linked List**
+
+---
+
+### Example
+
+```java
+Map<Integer, String> map = new LinkedHashMap<>();
+map.put(1, "A");
+map.put(2, "B");
+map.put(3, "C");
+```
+
+Iteration order: `1 → 2 → 3`
+
+---
+
+### Access Order Example (LRU Cache)
+
+```java
+Map<Integer, String> map =
+    new LinkedHashMap<>(16, 0.75f, true);
+```
+
+---
+
+## 🔹 WeakHashMap
+
+### What is it?
+
+* Map implementation where **keys are weakly referenced**
+* Entries are automatically removed when keys are **garbage collected**
+
+### Key Features
+
+* Uses **Weak References**
+* Helps prevent **memory leaks**
+* Allows **one null key** and **multiple null values**
+* Not thread-safe
+
+---
+
+### Example
+
+```java
+Map<Object, String> map = new WeakHashMap<>();
+
+Object key = new Object();
+map.put(key, "value");
+
+key = null;
+System.gc();  // Entry may be removed
+```
+
+---
+
+## 🔹 Key Differences (Interview Table)
+
+| Feature                | LinkedHashMap        | WeakHashMap            |
+| ---------------------- | -------------------- | ---------------------- |
+| Order                  | Maintains order      | No order               |
+| Key Reference          | Strong reference     | Weak reference         |
+| Garbage Collection     | Keys not GC’d        | Keys can be GC’d       |
+| Memory Leak Prevention | ❌ No                 | ✅ Yes                  |
+| Use Case               | Ordered data / Cache | Memory-sensitive cache |
+| Null Keys              | 1 allowed            | 1 allowed              |
+| Null Values            | Allowed              | Allowed                |
+| Thread Safe            | ❌ No                 | ❌ No                   |
+
+---
+
+## 🔹 When to Use LinkedHashMap?
+
+✔ When **order matters**
+✔ When insertion/access order is needed
+✔ Implementing **LRU Cache**
+✔ Predictable iteration required
+
+---
+
+## 🔹 When to Use WeakHashMap?
+
+✔ When keys should be **auto-removed**
+✔ To prevent **memory leaks**
+✔ For **caches, metadata storage**
+✔ Temporary mappings tied to object lifecycle
+
+---
+
+## 🔹 Real-World Examples
+
+### 🔹 LinkedHashMap
+
+* LRU cache implementation
+* Maintaining order in UI data
+* Request history tracking
+
+---
+
+### 🔹 WeakHashMap
+
+* Caching class loaders
+* Listener registration
+* Metadata associated with objects
+
+---
+
+## ⭐ Interview One-Liner
+
+> *LinkedHashMap maintains predictable iteration order, while WeakHashMap allows keys to be garbage collected, making it suitable for memory-sensitive caching.*
+
+
+## 🔥 Common Follow-up Interview Questions
+
+* Why is WeakHashMap preferred over HashMap in caches?
+* How does access order work in LinkedHashMap?
+* Can WeakHashMap entries disappear automatically?
+
+---
 Have you ever faced collision, and how will you fix it? 
 What is the difference between @Lazy and @Eager, when should each be used?
 What is @Autowiring when we use @Autowiring and Constructor injection, which one is better?
