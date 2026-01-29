@@ -2094,17 +2094,787 @@ this.save(); // Transaction will NOT start
 
 ---
 
-What is intermediate and terminal operator in java-8?
-Can we use immutable object as a key in Map?
-How do you identify this is Singleton patter?
-How do you detect memory leaks?
+## **14. What is intermediate and terminal operator in java-8?** </br>
 
+Java 8 stream operations are divided into **two types**:
 
-MultiTreading?
-What is the difference between ExecutorService and CompletableFuture class?
+1. **Intermediate operations**
+2. **Terminal operations**
 
+---
 
+## 1️⃣ Intermediate Operations
 
+### Definition
+
+👉 Operations that **return a Stream** and are used to **transform** the stream.
+
+### Key characteristics
+
+* Return a **Stream**
+* **Lazy** (not executed immediately)
+* Can be **chained**
+* Do nothing until a terminal operation is called
+
+### Common intermediate operators
+
+* `filter()`
+* `map()`
+* `flatMap()`
+* `sorted()`
+* `distinct()`
+* `limit()`
+* `skip()`
+* `peek()`
+
+### Example
+
+```java
+Stream<Integer> stream =
+    numbers.stream()
+           .filter(n -> n > 10)
+           .map(n -> n * 2);
+```
+
+⚠️ Nothing executes yet — this is just a pipeline.
+
+---
+
+## 2️⃣ Terminal Operations
+
+### Definition
+
+👉 Operations that **end the stream** and produce a **result** or a **side effect**.
+
+### Key characteristics
+
+* Return a **non-stream value** or `void`
+* **Trigger execution** of intermediate operations
+* Stream **cannot be reused** after terminal operation
+
+### Common terminal operators
+
+* `forEach()`
+* `collect()`
+* `reduce()`
+* `findFirst()`
+* `findAny()`
+* `anyMatch()`
+* `allMatch()`
+* `noneMatch()`
+* `count()`
+* `min()`, `max()`
+
+### Example
+
+```java
+numbers.stream()
+       .filter(n -> n > 10)
+       .map(n -> n * 2)
+       .collect(Collectors.toList());
+```
+
+Here, `collect()` is the terminal operation that **executes the stream**.
+
+---
+
+## 🔁 Combined Example (Very Important)
+
+```java
+numbers.stream()          // source
+       .filter(n -> n % 2 == 0)   // intermediate
+       .map(n -> n * 2)           // intermediate
+       .sorted()                  // intermediate
+       .forEach(System.out::println); // terminal
+```
+
+---
+
+## 🧠 Interview-friendly summary
+
+| Intermediate Operation | Terminal Operation         |
+| ---------------------- | -------------------------- |
+| Returns Stream         | Returns result / void      |
+| Lazy execution         | Triggers execution         |
+| Can be chained         | Ends the stream            |
+| Examples: map, filter  | Examples: collect, forEach |
+
+📌 **One-liner for interview**:
+
+> “Intermediate operations build the stream pipeline and are lazily executed, while terminal operations trigger execution and produce the final result.”
+
+---
+
+Great follow-up 👍
+**Short-circuiting** is an important (and interview-favorite) concept in Java 8 streams.
+
+---
+
+## What is short-circuiting in Java 8?
+
+👉 **Short-circuiting means the stream stops processing elements as soon as the result is determined.**
+It does **not** traverse the entire stream.
+
+This improves **performance** and **efficiency**.
+
+---
+
+## Short-circuiting Terminal Operations
+
+These terminal operations may **stop early**:
+
+* `findFirst()`
+* `findAny()`
+* `anyMatch()`
+* `allMatch()`
+* `noneMatch()`
+* `limit()`
+
+---
+
+## Example 1: `anyMatch()`
+
+```java
+List<Integer> numbers = Arrays.asList(1, 3, 5, 8, 9);
+
+boolean hasEven =
+    numbers.stream()
+           .peek(System.out::println)
+           .anyMatch(n -> n % 2 == 0);
+```
+
+### Execution
+
+```
+1
+3
+5
+8   ← match found, stream stops here
+```
+
+👉 `9` is **never processed**.
+
+---
+
+## Example 2: `findFirst()`
+
+```java
+numbers.stream()
+       .filter(n -> n > 5)
+       .findFirst()
+       .ifPresent(System.out::println);
+```
+
+* Stops as soon as it finds the **first** number > 5
+* Does not scan remaining elements
+
+---
+
+## Example 3: `limit()` (Intermediate but short-circuiting)
+
+```java
+numbers.stream()
+       .limit(3)
+       .forEach(System.out::println);
+```
+
+Output:
+
+```
+1
+3
+5
+```
+
+👉 Stream processes **only 3 elements**.
+
+---
+
+## Example 4: `allMatch()`
+
+```java
+boolean allEven =
+    numbers.stream()
+           .allMatch(n -> n % 2 == 0);
+```
+
+* Stops at the **first odd number**
+* No need to check remaining elements
+
+---
+
+## Short-circuiting vs Non-short-circuiting
+
+### ❌ Non-short-circuiting
+
+```java
+numbers.stream()
+       .filter(n -> n % 2 == 0)
+       .count();
+```
+
+* Must process **all elements**
+
+### ✅ Short-circuiting
+
+```java
+numbers.stream()
+       .anyMatch(n -> n % 2 == 0);
+```
+
+* Stops as soon as condition is met
+
+---
+
+## Important interview point
+
+> Short-circuiting works best with **ordered streams** and **lazy intermediate operations**.
+
+---
+
+## One-line interview answer
+
+> “Short-circuiting in Java 8 streams means terminating stream processing early once the result is known, improving performance.”
+
+---
+
+## **15. Can we use immutable object as a key in Map?** </br>
+Yes — **and that’s actually the best practice** 👍
+You **should use immutable objects as keys in a Map**.
+
+---
+
+## Short answer (interview-ready)
+
+> **Yes, immutable objects can be safely used as keys in a Map because their hashCode and equals values never change.**
+
+---
+
+## Why immutable objects are good Map keys
+
+### How Map works (quick reminder)
+
+* `hashCode()` → decides the bucket
+* `equals()` → finds the exact key inside the bucket
+
+👉 If either of these **changes after insertion**, the map breaks.
+
+---
+
+## What happens if the key is mutable ❌
+
+```java
+Map<Employee, String> map = new HashMap<>();
+
+Employee emp = new Employee(1, "John");
+map.put(emp, "Developer");
+
+// change key state
+emp.setId(2);
+
+// Now this fails
+map.get(emp); // returns null
+```
+
+💥 Because `hashCode()` changed, the map can’t find the key anymore.
+
+---
+
+## Why immutable objects are safe ✅
+
+```java
+Map<String, Integer> map = new HashMap<>();
+map.put("Java", 1);
+
+map.get("Java"); // always works
+```
+
+* `String` is immutable
+* `hashCode()` never changes
+
+---
+
+## Examples of good immutable keys
+
+* `String`
+* `Integer`, `Long`
+* `LocalDate`, `LocalDateTime`
+* Custom immutable classes (final fields, no setters)
+
+---
+
+## Custom immutable key example
+
+```java
+final class EmployeeKey {
+    private final int id;
+    private final String name;
+
+    public EmployeeKey(int id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof EmployeeKey)) return false;
+        EmployeeKey that = (EmployeeKey) o;
+        return id == that.id && name.equals(that.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name);
+    }
+}
+```
+
+✅ Safe to use as a `Map` key.
+
+---
+
+## Interview trap question ⚠️
+
+**Q:** Can we use a mutable object as a key?
+**A:** Yes, but it’s dangerous and not recommended. If the object state changes, map behavior becomes unpredictable.
+
+---
+
+## One-line interview answer
+
+> “Immutable objects are ideal Map keys because their state, hashCode, and equals never change, ensuring consistent lookup behavior.”
+
+---
+## **16. How do you identify this is Singleton patter?** </br>
+Good interview question 👍
+When someone asks **“How do you identify this is a Singleton pattern?”**, they usually expect you to look for **specific structural clues** in the code.
+
+---
+
+## How to identify a Singleton pattern
+
+You identify a Singleton by checking **these 3 core characteristics** 👇
+
+---
+
+## 1️⃣ Private constructor
+
+```java
+private Singleton() {
+}
+```
+
+### Why?
+
+* Prevents object creation using `new`
+* Ensures **only the class itself** can create the instance
+
+📌 **Interview line**:
+
+> “A private constructor prevents external instantiation.”
+
+---
+
+## 2️⃣ Static instance variable
+
+```java
+private static Singleton instance;
+```
+
+### Why?
+
+* Belongs to the class, not an object
+* Ensures **only one shared instance**
+
+---
+
+## 3️⃣ Public static access method
+
+```java
+public static Singleton getInstance() {
+    if (instance == null) {
+        instance = new Singleton();
+    }
+    return instance;
+}
+```
+
+### Why?
+
+* Provides a **global access point**
+* Controls instance creation
+
+📌 **Interview line**:
+
+> “The instance is created and accessed through a static method.”
+
+---
+
+## Minimal Singleton example
+
+```java
+public class Singleton {
+
+    private static Singleton instance;
+
+    private Singleton() {
+    }
+
+    public static Singleton getInstance() {
+        if (instance == null) {
+            instance = new Singleton();
+        }
+        return instance;
+    }
+}
+```
+
+---
+
+## Other ways to identify Singleton
+
+### 🔹 Eager initialization
+
+```java
+private static final Singleton INSTANCE = new Singleton();
+
+public static Singleton getInstance() {
+    return INSTANCE;
+}
+```
+
+### 🔹 Bill Pugh (recommended)
+
+```java
+public class Singleton {
+
+    private Singleton() {}
+
+    private static class Holder {
+        private static final Singleton INSTANCE = new Singleton();
+    }
+
+    public static Singleton getInstance() {
+        return Holder.INSTANCE;
+    }
+}
+```
+
+### 🔹 Enum Singleton
+
+```java
+enum Singleton {
+    INSTANCE;
+}
+```
+
+---
+
+## Red flags (NOT singleton)
+
+* Public constructor ❌
+* Multiple instances created ❌
+* No static access method ❌
+
+---
+
+## One-line interview answer
+
+> “A class is a Singleton if it has a private constructor, a static instance, and a public static method to provide a single shared instance.”
+
+---
+
+## **17. How do you detect memory leaks?** </br>
+Another **excellent interview question** 👍
+I’ll answer this in a **practical, real-world + interview-ready** way.
+
+---
+
+## Short interview answer
+
+> “Memory leaks are detected by monitoring heap usage, analyzing heap dumps, and identifying objects that are still referenced and not garbage collected using profiling tools.”
+
+---
+
+## How do you detect memory leaks? (Step-by-step)
+
+### 1️⃣ Monitor memory usage
+
+Look for **continuous heap growth** even after GC.
+
+Tools:
+
+* **JVisualVM**
+* **JConsole**
+* **Java Flight Recorder (JFR)**
+* **Prometheus + Grafana**
+
+🔍 **Red flag**:
+
+* Heap usage keeps increasing
+* Full GC does not free memory
+
+---
+
+### 2️⃣ Enable GC logs
+
+```bash
+-Xlog:gc   (Java 11+)
+-verbose:gc (Java 8)
+```
+
+What to look for:
+
+* Frequent Full GC
+* Old Gen continuously growing
+
+---
+
+### 3️⃣ Take heap dumps
+
+Capture heap snapshot when memory is high:
+
+```bash
+jmap -dump:live,format=b,file=heap.hprof <pid>
+```
+
+Or automatically on OOM:
+
+```bash
+-XX:+HeapDumpOnOutOfMemoryError
+```
+
+---
+
+### 4️⃣ Analyze heap dumps
+
+Use tools to inspect heap:
+
+* **Eclipse MAT** (most popular)
+* **JProfiler**
+* **VisualVM**
+
+Look for:
+
+* Dominator tree
+* Retained size
+* Objects with unexpected references
+
+📌 Example leak causes:
+
+* Static collections
+* Caches without eviction
+* Listeners not removed
+* ThreadLocal misuse
+
+---
+
+### 5️⃣ Compare multiple heap dumps
+
+Take dumps at **different times**.
+
+If:
+
+* Same objects keep growing
+* Same class retains more memory
+
+👉 You have a memory leak.
+
+---
+
+## Common memory leak patterns (interview gold)
+
+### 🔹 Static references
+
+```java
+static List<Object> list = new ArrayList<>();
+```
+
+### 🔹 Unclosed resources
+
+* JDBC connections
+* InputStreams
+* File handles
+
+### 🔹 Listeners / callbacks
+
+* Registered but never removed
+
+### 🔹 ThreadLocal leaks
+
+```java
+ThreadLocal<MyObject> tl = new ThreadLocal<>();
+// not removed → leak
+```
+
+### 🔹 Caches without eviction
+
+* HashMap with no size limit
+
+---
+
+## 6️⃣ Production detection
+
+* Alerts on high heap usage
+* OOM kills
+* Pod restarts (Kubernetes)
+
+---
+
+## One-liner interview answer
+
+> “We detect memory leaks by monitoring heap usage, enabling GC logs, taking heap dumps, and analyzing them with tools like Eclipse MAT to find objects that are not being garbage collected.”
+
+---
+
+## Bonus: How to prevent memory leaks
+
+* Close resources (`try-with-resources`)
+* Use `WeakReference` where applicable
+* Limit cache size
+* Avoid unnecessary static objects
+* Clear ThreadLocals
+
+---
+
+## **MultiTreading?**
+
+## **18. What is the difference between ExecutorService and CompletableFuture class?** </br>
+Great question — this one comes up a lot in **Java concurrency interviews** 👍
+I’ll explain it **clearly**, then give you a **comparison table**, and finish with **when to use which**.
+
+---
+
+## High-level difference
+
+> **ExecutorService** is about **managing threads and executing tasks**,
+> **CompletableFuture** is about **asynchronous programming and composing results**.
+
+They often work **together**, not against each other.
+
+---
+
+## 1️⃣ ExecutorService
+
+### What it is
+
+* Part of `java.util.concurrent`
+* Manages a **thread pool**
+* Executes `Runnable` or `Callable` tasks
+
+### Key features
+
+* Controls number of threads
+* Task submission & lifecycle management
+* Blocking result retrieval via `Future`
+
+### Example
+
+```java
+ExecutorService executor = Executors.newFixedThreadPool(5);
+
+Future<Integer> future = executor.submit(() -> {
+    Thread.sleep(1000);
+    return 10;
+});
+
+Integer result = future.get(); // blocks
+executor.shutdown();
+```
+
+### Limitations
+
+* `Future.get()` is **blocking**
+* Hard to chain async tasks
+* No built-in error handling pipeline
+* Callback style is clunky
+
+---
+
+## 2️⃣ CompletableFuture
+
+### What it is
+
+* Introduced in **Java 8**
+* Represents an **asynchronous computation result**
+* Supports **non-blocking**, functional-style async programming
+
+### Key features
+
+* Non-blocking callbacks
+* Task chaining (`thenApply`, `thenCompose`)
+* Combine multiple async tasks
+* Exception handling (`exceptionally`, `handle`)
+* Can run on default ForkJoinPool or custom Executor
+
+### Example
+
+```java
+CompletableFuture<Integer> future =
+    CompletableFuture.supplyAsync(() -> 10)
+                     .thenApply(n -> n * 2);
+
+future.thenAccept(System.out::println); // non-blocking
+```
+
+---
+
+## 3️⃣ Side-by-side comparison (interview-friendly)
+
+| Feature          | ExecutorService    | CompletableFuture   |
+| ---------------- | ------------------ | ------------------- |
+| Introduced       | Java 5             | Java 8              |
+| Purpose          | Thread management  | Async computation   |
+| Blocking         | Yes (`Future.get`) | Mostly non-blocking |
+| Task chaining    | ❌ Hard             | ✅ Easy              |
+| Combine tasks    | ❌ Manual           | ✅ Built-in          |
+| Error handling   | ❌ Limited          | ✅ Rich API          |
+| Functional style | ❌ No               | ✅ Yes               |
+| Thread control   | ✅ Strong           | ⚠ Uses Executor     |
+
+---
+
+## 4️⃣ Using them together (best practice)
+
+```java
+ExecutorService executor = Executors.newFixedThreadPool(4);
+
+CompletableFuture<Integer> future =
+    CompletableFuture.supplyAsync(() -> 10, executor)
+                     .thenApply(n -> n * 2);
+
+future.thenAccept(System.out::println);
+executor.shutdown();
+```
+
+👉 **ExecutorService** = *where the task runs*
+👉 **CompletableFuture** = *how async logic flows*
+
+---
+
+## 5️⃣ When to use what?
+
+### Use **ExecutorService** when:
+
+* You only need to execute background tasks
+* You care about thread pool control
+* Simple fire-and-forget or blocking results are okay
+
+### Use **CompletableFuture** when:
+
+* You need non-blocking async calls
+* You want to chain async operations
+* You want better error handling
+* You are building async APIs / microservices
+
+---
+
+## One-line interview answer
+
+> “ExecutorService manages threads and executes tasks, while CompletableFuture represents asynchronous computations and allows non-blocking, composable workflows.”
+
+---
 
 How will you design HA & FT architecture in aws?
 In the EKS if the microservice is down then how will you dubug this?
