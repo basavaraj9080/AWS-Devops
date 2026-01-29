@@ -171,11 +171,66 @@ employees.stream().collect(Collectors.groupingBy(Employee::getDept));
 
 It’s the **modern, concise Java 8 way** to group items by a property.
 
----
+## **Java 7 version (without Streams)**
+import java.util.*;
 
-If you want, I can also give a **version that counts employees per department** using **Collectors.groupingBy + counting()**, which is also a very common pattern in Java 8.
+class Employee {
+    private String name;
+    private String dept;
 
-Do you want me to do that?
+    public Employee(String name, String dept) {
+        this.name = name;
+        this.dept = dept;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDept() {
+        return dept;
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
+}
+
+public class GroupByDeptJava7 {
+    public static void main(String[] args) {
+        List<Employee> employees = Arrays.asList(
+            new Employee("Alice", "HR"),
+            new Employee("Bob", "Finance"),
+            new Employee("Charlie", "HR"),
+            new Employee("David", "Finance"),
+            new Employee("Eve", "IT")
+        );
+
+        Map<String, List<Employee>> result = new HashMap<>();
+
+        for (Employee e : employees) {
+            String dept = e.getDept();
+            if (!result.containsKey(dept)) {
+                result.put(dept, new ArrayList<Employee>());
+            }
+            result.get(dept).add(e);
+        }
+
+        // Print result
+        for (Map.Entry<String, List<Employee>> entry : result.entrySet()) {
+            System.out.println(entry.getKey() + " => " + entry.getValue());
+        }
+    }
+}
+
+Output for both:
+HR => [Alice, Charlie]
+Finance => [Bob, David]
+IT => [Eve]
+
+
+If you want:
 
 
 Explian the features of Java-8?
