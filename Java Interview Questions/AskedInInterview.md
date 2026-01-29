@@ -802,16 +802,16 @@ Optional<T> findById(ID id); // Spring Data JPA
 
 ---
 
-What is the difference between Optional class methods?
-	orElse(defaultValue);  // returns value or default
-	orElseGet(() -> val);  // lazy default
-	
+## **6. What is the difference between Optional class methods?** </br>
+```
 	get();                 // returns value (throws exception if empty)
 	orElse(defaultValue);  // returns value or default
 	orElseGet(() -> val);  // lazy default
 	orElseThrow();         // throws NoSuchElementException
 	orElseThrow(() -> ex); // custom exception
+```
 
+---
 What is the difference between HashMap and ConcurrentHashMap, and when should each be used?
 What is the difference between LinkedHashMap and WeakHashMap, and when should each be used?
 Have you ever faced collision, and how will you fix it? 
