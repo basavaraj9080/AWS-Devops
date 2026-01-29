@@ -90,25 +90,6 @@ public class Test {
 ```
 ihgf@edc#ba
 ```
-## 🔍 How this works (quick explanation)
-
-1. **Extract letters**
-
-   ```java
-   a b c d e f g h i
-   ```
-
-2. **Reverse letters**
-
-   ```java
-   i h g f e d c b a
-   ```
-
-3. **Rebuild string**
-
-   * If character is a letter → take next reversed letter
-   * Else → keep special character as-is
-
 ---
 	
 Print the departmentwise highest salary? using groupingBy or using map
