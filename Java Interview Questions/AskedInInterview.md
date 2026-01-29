@@ -2131,3 +2131,301 @@ Is there any performance issue if you use indexing?
 How indexing works?
 What is Normalizaton and DeNormalization?
 What is the difference between Where and Having?
+
+
+</br>
+---
+---
+
+Nice set of **interview questions** — I’ll answer them **clearly, practically, and in interview-ready language** 👍
+You can almost read these out loud in an interview.
+
+---
+
+## 1️⃣ Difference between `@Service` and `@Repository`
+
+### What they are
+
+All three are **Spring stereotypes**:
+
+* `@Component` → generic bean
+* `@Service` → business logic layer
+* `@Repository` → data access layer (DAO)
+
+### Key difference
+
+👉 **Exception translation**
+
+* `@Repository`
+
+  * Automatically converts database exceptions (like `SQLException`)
+  * Into Spring’s unchecked `DataAccessException`
+* `@Service` and `@Component`
+
+  * Do **not** provide exception translation
+
+### What happens if you replace `@Repository` with `@Service` or `@Component`?
+
+* The bean will still be created ✅
+* **Exception translation will NOT happen** ❌
+* Database exceptions may leak as low-level SQL exceptions
+
+📌 **Interview line**:
+
+> “`@Repository` is specialized for DAO classes and enables automatic exception translation, while `@Service` is meant for business logic.”
+
+---
+
+## 2️⃣ Status code when a request takes a very long time (e.g., 1 hour)
+
+### Best practice
+
+You **should not keep an HTTP request open for 1 hour**.
+
+### Recommended approach
+
+👉 **Async processing**
+
+| Scenario                           | Status Code             |
+| ---------------------------------- | ----------------------- |
+| Request accepted, processing later | **202 Accepted**        |
+| Request still processing           | **202 Accepted**        |
+| Client polls for status            | **200 OK**              |
+| Timeout                            | **504 Gateway Timeout** |
+
+### Flow
+
+1. Client sends request
+2. Server responds:
+
+```http
+HTTP/1.1 202 Accepted
+```
+
+3. Processing happens in background
+4. Client checks status via another API
+
+📌 **Interview line**:
+
+> “For long-running operations, we return `202 Accepted` and process asynchronously.”
+
+---
+
+## 3️⃣ How do you maintain data consistency in DB?
+
+### Common techniques
+
+#### 🔹 Transactions (ACID)
+
+```java
+@Transactional
+```
+
+* Atomicity
+* Consistency
+* Isolation
+* Durability
+
+#### 🔹 Isolation levels
+
+* READ_COMMITTED
+* REPEATABLE_READ
+* SERIALIZABLE
+
+#### 🔹 Locking
+
+* Pessimistic locking
+* Optimistic locking (`@Version`)
+
+#### 🔹 Database constraints
+
+* Primary key
+* Foreign key
+* Unique constraint
+* Not null
+
+#### 🔹 Distributed systems
+
+* Saga pattern
+* Eventual consistency
+
+📌 **Interview line**:
+
+> “We use transactions, proper isolation levels, locking mechanisms, and database constraints to maintain data consistency.”
+
+---
+
+## 4️⃣ What is MongoDB and why do you use it?
+
+### What is MongoDB?
+
+* **NoSQL document database**
+* Stores data as **JSON-like documents (BSON)**
+* Schema-less
+
+### Why use MongoDB?
+
+* Flexible schema
+* Faster reads/writes for large data
+* Handles unstructured data
+* Horizontal scaling (sharding)
+
+### When to use
+
+* Logs
+* Events
+* User activity
+* Real-time analytics
+
+📌 **Interview line**:
+
+> “MongoDB is a document-based NoSQL database used when schema flexibility and high scalability are required.”
+
+---
+
+## 5️⃣ Client-side vs Server-side Load Balancer
+
+### Client-side Load Balancer
+
+* Client decides which server to call
+* Example:
+
+  * Netflix Ribbon
+  * Spring Cloud LoadBalancer
+
+✔ Faster
+❌ Client must know service instances
+
+---
+
+### Server-side Load Balancer
+
+* A load balancer sits between client and servers
+* Examples:
+
+  * AWS ELB / ALB
+  * Nginx
+  * HAProxy
+
+✔ Simpler for clients
+✔ Centralized control
+
+📌 **Interview line**:
+
+> “Client-side load balancing shifts the balancing logic to the client, while server-side load balancing uses a centralized component.”
+
+---
+
+## 6️⃣ What is an API Gateway and how does it work?
+
+### What it is
+
+* Single entry point for all microservices
+
+### Responsibilities
+
+* Routing
+* Authentication & authorization
+* Rate limiting
+* Logging
+* Caching
+
+### How it works
+
+```
+Client → API Gateway → Microservices
+```
+
+Examples:
+
+* Spring Cloud Gateway
+* AWS API Gateway
+* Kong
+
+📌 **Interview line**:
+
+> “An API Gateway acts as a reverse proxy and handles cross-cutting concerns for microservices.”
+
+---
+
+## 7️⃣ Where did you deploy your service?
+
+### Common answers
+
+* AWS EKS (Kubernetes)
+* EC2
+* Docker containers
+* On-premise Kubernetes
+
+📌 Example answer:
+
+> “Our services are deployed on AWS EKS using Docker containers.”
+
+---
+
+## 8️⃣ Why EKS? Are there other deployment options?
+
+### Why EKS
+
+* Managed Kubernetes
+* Auto-scaling
+* High availability
+* AWS integration (IAM, ALB, CloudWatch)
+
+### Alternatives
+
+* ECS
+* AKS (Azure)
+* GKE (Google)
+* OpenShift
+* EC2 + Docker
+
+📌 **Interview line**:
+
+> “We chose EKS for managed Kubernetes and tight AWS integration, but alternatives include ECS, AKS, and GKE.”
+
+---
+
+## 9️⃣ Explain CI/CD pipeline steps
+
+### Typical CI/CD flow
+
+1. **Code commit**
+
+   * Developer pushes code to Git
+
+2. **Build**
+
+   * Maven / Gradle
+
+3. **Unit tests**
+
+   * JUnit / Mockito
+
+4. **Static code analysis**
+
+   * SonarQube
+
+5. **Build Docker image**
+
+   * Dockerfile
+
+6. **Push image**
+
+   * ECR / Docker Hub
+
+7. **Deploy**
+
+   * Kubernetes / Helm
+
+8. **Monitoring**
+
+   * Prometheus, Grafana
+
+📌 **Interview line**:
+
+> “CI/CD automates build, test, image creation, and deployment to Kubernetes.”
+
+---
+
+
