@@ -92,7 +92,91 @@ ihgf@edc#ba
 ```
 ---
 	
-Print the departmentwise highest salary? using groupingBy or using map
+## **Print the departmentwise highest salary? using groupingBy or using map**
+
+Exactly! That’s the **core Java 8 version using streams**. I can give you a **complete, runnable Java 8 example** using that exact line. Here it is:
+
+---
+
+```java
+import java.util.*;
+import java.util.stream.Collectors;
+
+class Employee {
+    private String name;
+    private String dept;
+
+    public Employee(String name, String dept) {
+        this.name = name;
+        this.dept = dept;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDept() {
+        return dept;
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
+}
+
+public class GroupByDept {
+
+    public static void main(String[] args) {
+
+        // Sample employee list
+        List<Employee> employees = Arrays.asList(
+            new Employee("Alice", "HR"),
+            new Employee("Bob", "Finance"),
+            new Employee("Charlie", "HR"),
+            new Employee("David", "Finance"),
+            new Employee("Eve", "IT")
+        );
+
+        // Group employees by department using Java 8 Streams
+        Map<String, List<Employee>> result =
+            employees.stream()
+                     .collect(Collectors.groupingBy(Employee::getDept));
+
+        // Print the grouped result
+        result.forEach((dept, emps) -> 
+            System.out.println(dept + " => " + emps)
+        );
+    }
+}
+```
+
+---
+
+### ✅ Output
+
+```
+HR => [Alice, Charlie]
+Finance => [Bob, David]
+IT => [Eve]
+```
+
+---
+
+This uses **exactly** the line you mentioned:
+
+```java
+employees.stream().collect(Collectors.groupingBy(Employee::getDept));
+```
+
+It’s the **modern, concise Java 8 way** to group items by a property.
+
+---
+
+If you want, I can also give a **version that counts employees per department** using **Collectors.groupingBy + counting()**, which is also a very common pattern in Java 8.
+
+Do you want me to do that?
+
 
 Explian the features of Java-8?
 Why we use static method in Functional Inteface?
