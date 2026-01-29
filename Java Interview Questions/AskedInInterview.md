@@ -240,11 +240,6 @@ IT => [Eve]
 
 
 ## **3. Explian the features of Java-8?** </br>
-Got it 👍
-Below are **clean, exam/interview-ready NOTES** you can **directly copy into your notebook**.
-Concise • Structured • Easy to revise.
-
----
 
 # 📘 JAVA 8 FEATURES – NOTES FORMAT
 
@@ -533,7 +528,128 @@ CompletableFuture
 
 ---
 
-Why we use static method in Functional Inteface?
+## **4. Why we use static method in Functional Inteface?** </br?
+Good question — this is **very commonly asked in interviews** 👍
+Here’s a **clear, notes-style explanation** with *why + purpose + example*.
+
+---
+
+# Why do we use **static methods** in a Functional Interface?
+
+## 🔹 Short Answer (Interview Line)
+
+> Static methods in a functional interface are used to provide **utility/helper methods** related to the interface **without affecting the functional nature** of the interface.
+
+---
+
+## 🔹 Detailed Explanation
+
+### 1️⃣ They **do NOT break** functional interface rule
+
+* Functional interface rule: **only one abstract method**
+* Static methods are **not abstract**
+* So, we can add **any number of static methods** safely
+
+---
+
+### 2️⃣ Provide **Utility / Helper Methods**
+
+* Used to place common logic related to the interface
+* Keeps code **organized and cohesive**
+
+📌 Similar to utility classes, but grouped with the interface.
+
+---
+
+### 3️⃣ No Object Creation Needed
+
+* Static methods belong to the **interface itself**
+* Called using interface name
+* Saves memory and improves clarity
+
+---
+
+### 4️⃣ Cannot Be Overridden
+
+* Static methods are **not inherited**
+* Ensures consistent behavior across implementations
+
+---
+
+### 5️⃣ Helps in Code Reusability
+
+* Shared logic across all implementations
+* Avoids duplication
+
+---
+
+## 🔹 Example
+
+```java
+@FunctionalInterface
+interface Calculator {
+
+    int add(int a, int b);   // single abstract method
+
+    static int multiply(int a, int b) {
+        return a * b;
+    }
+}
+```
+
+### Usage:
+
+```java
+Calculator calc = (a, b) -> a + b;
+
+System.out.println(calc.add(2, 3));               // 5
+System.out.println(Calculator.multiply(2, 3));   // 6
+```
+
+---
+
+## 🔹 Why not make it default instead?
+
+| Default Method    | Static Method        |
+| ----------------- | -------------------- |
+| Can be overridden | Cannot be overridden |
+| Requires object   | No object required   |
+| Instance-level    | Interface-level      |
+
+👉 **Static method** is preferred when:
+
+* Logic is common
+* Should not be overridden
+* Does not depend on instance state
+
+---
+
+## 🔹 Real-World Example (Java API)
+
+```java
+Comparator<Integer> comp = Comparator.naturalOrder();
+```
+
+`naturalOrder()` is a **static method** inside `Comparator` interface.
+
+---
+
+## 🔹 When to Use Static Methods in Functional Interfaces
+
+✔ Utility logic
+✔ Factory methods
+✔ Validation helpers
+✔ Common algorithms
+✔ Conversion logic
+
+---
+
+## 🔹 One-Line Interview Answer ⭐
+
+> *Static methods in functional interfaces are used to provide utility or helper methods related to the interface without violating the single abstract method rule.*
+
+---
+
 What is Optional class in java-8?
 What is the difference between Optional class methods?
 	orElse(defaultValue);  // returns value or default
