@@ -47,6 +47,40 @@ public class Test {
 ```
 ihgf@edc#ba
 ```
+</br>
+**Using Stream** </br>
+```java
+import java.util.*;
+import java.util.stream.*;
+
+public class Test {
+
+    public static void main(String[] args) {
+
+        String input = "abcd@efg#hi";
+
+        // Collect letters and reverse them
+        List<Character> letters =
+                input.chars()
+                     .mapToObj(c -> (char) c)
+                     .filter(Character::isLetter)
+                     .collect(Collectors.toList());
+
+        Collections.reverse(letters);
+
+        // Build result using streams
+        String result =
+                input.chars()
+                     .mapToObj(c -> (char) c)
+                     .map(c -> Character.isLetter(c) ? letters.remove(0) : c)
+                     .map(String::valueOf)
+                     .collect(Collectors.joining());
+
+        System.out.println(result);
+    }
+}
+
+```
 
 	
 Print the departmentwise highest salary? using groupingBy or using map
