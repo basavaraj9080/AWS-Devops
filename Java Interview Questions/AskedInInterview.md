@@ -4,7 +4,7 @@ Write a program to print second highest employee salary using java 8
 	.limit(2)
 	.skip(1)
 
-## **Write a program to reverse the charecter of the string and should not change the special charecter place?**
+## **1. Write a program to reverse the charecter of the string and should not change the special charecter place?**
 	String input = "abcd@efg#hi"; </br>
 	Output string: ihgf@edc#ba </br>
 
@@ -92,7 +92,7 @@ ihgf@edc#ba
 ```
 ---
 	
-## **Print the departmentwise highest salary? using groupingBy or using map**
+## **2. Print the departmentwise highest salary? using groupingBy or using map**
 
 Exactly! That’s the **core Java 8 version using streams**. I can give you a **complete, runnable Java 8 example** using that exact line. Here it is:
 
@@ -239,7 +239,7 @@ IT => [Eve]
 
 
 
-## **Explian the features of Java-8?** </br>
+## **3. Explian the features of Java-8?** </br>
 Got it 👍
 Below are **clean, exam/interview-ready NOTES** you can **directly copy into your notebook**.
 Concise • Structured • Easy to revise.
