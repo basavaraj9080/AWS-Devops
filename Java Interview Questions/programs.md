@@ -106,6 +106,8 @@ If you want, I can also show:
 <br>
 <br>
 
+---
+
 **Program 2**
 </br>
 Let’s analyze the code carefully.
@@ -190,6 +192,9 @@ But it does **NOT execute** if:
 If you want, I can give you similar tricky Java interview questions for practice 😊
 
 ---
+---
+<br>
+
 ---
 <br>
 
@@ -505,6 +510,7 @@ If you want, I can also show:
 <br>
 
 **Program**
+
 <br>
 explian this
 
