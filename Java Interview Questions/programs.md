@@ -1,4 +1,5 @@
-**Program 1** <br>
+**Program 1** 
+<br>
 	Given a list of transactions, find the sum of transaction amounts for each day using Java streams.
 
 	List<Transaction> transactions = Arrays.asList(
@@ -16,7 +17,8 @@
 	);
   <br>
   
-  **Answer** <br>
+  **Answer** 
+  <br>
   You can use **Java Streams** with `Collectors.groupingBy()` and `Collectors.summingInt()` to calculate the sum of transaction amounts for each day.
 
 Here is the complete solution:
@@ -107,6 +109,7 @@ If you want, I can also show:
 <br>
 
 ---
+<br>
 
 **Program 2**
 </br>
@@ -315,6 +318,7 @@ If you want, I can also show:
 
 <br>
 ---
+<br>
 ---
 <br>
 
@@ -422,6 +426,7 @@ If you want, I can also show:
 
 <br>
 ---
+<br>
 ---
 
 <br>
@@ -506,6 +511,7 @@ If you want, I can also show:
 
 <br>
 ---
+<br>
 ---
 <br>
 
