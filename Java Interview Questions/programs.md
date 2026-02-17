@@ -102,3 +102,89 @@ If you want, I can also show:
 * Java 8 alternative using `toMap`
 * How to use `LocalDate` instead of String
 * Interview-optimized explanation for TCS/MNC 👍
+
+<br>
+<br>
+
+**Program 2**
+</br>
+Let’s analyze the code carefully.
+
+```java
+try {
+
+    if (flag) {
+        while (true) {
+        }
+    } else {
+        System.exit(1);
+    }
+
+} finally {
+    System.out.println("In Finally");
+}
+```
+
+---
+
+## ✅ Case 1: `flag = true`
+
+```java
+while (true) { }
+```
+
+* This is an **infinite loop**.
+* The program never exits the `try` block.
+* Since it never exits, the `finally` block is **never executed**.
+
+### ✔ Output:
+
+**No output**
+Program runs forever.
+
+---
+
+## ✅ Case 2: `flag = false`
+
+```java
+System.exit(1);
+```
+
+* `System.exit(1)` terminates the JVM immediately.
+* When JVM shuts down, `finally` block **does NOT execute**.
+
+### ✔ Output:
+
+**No output**
+
+---
+
+# 🎯 Final Answer
+
+👉 In **both cases**,
+
+```
+In Finally
+```
+
+will **NOT** be printed.
+
+---
+
+# 💡 Important Concept (Interview Point)
+
+`finally` block executes:
+
+* After normal completion
+* After exception
+* Even after `return`
+
+But it does **NOT execute** if:
+
+* `System.exit()` is called
+* JVM crashes
+* Infinite loop prevents exit
+
+---
+
+If you want, I can give you similar tricky Java interview questions for practice 😊
