@@ -196,7 +196,7 @@ NOT_SUPPORTED → Suspend transaction and run without one
 ---
 ---
 
-** Realtime Example for previous question **
+**Realtime Example for previous question**
 
 Absolutely. The easiest way to understand transaction propagation is with **real business scenarios**.
 
