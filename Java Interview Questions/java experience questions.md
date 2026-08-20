@@ -47,7 +47,8 @@ Think of them as three levels:
 
 <img width="474" height="268" alt="image" src="https://github.com/user-attachments/assets/f2fa7462-6f7a-4c94-a7e8-817a797d9d7d" />
 
-<img width="474" height="268" alt="image" src="https://github.com/user-attachments/assets/fee82598-1bae-400f-8110-1597524a08b6" />
+<img width="445" height="242" alt="image" src="https://github.com/user-attachments/assets/f75f1248-77fc-4ed9-991f-71c81cbda95d" />
+
 
 
 ### JVM – Java Virtual Machine
