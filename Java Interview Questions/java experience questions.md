@@ -495,6 +495,138 @@ If asked **“How does memory management work in Java 8?”**, a good concise an
 
 > **Java 8 uses JVM-managed memory. Objects are allocated mainly on the heap, which is divided into Young and Old generations. New objects generally enter Eden, and objects that survive garbage collections may be promoted to the Old Generation. The Garbage Collector automatically identifies unreachable objects and reclaims their heap memory. Java 8 also replaced PermGen with Metaspace, which stores class metadata in native memory. Each thread has its own stack for method execution and local data.**
 
+---
+These are the **four major Garbage Collectors you should know for Java 8**. Here's how they differ:
+
+| GC              | How it works                                            | Main advantage                           | Main disadvantage              |
+| --------------- | ------------------------------------------------------- | ---------------------------------------- | ------------------------------ |
+| **Serial GC**   | One GC thread; application pauses during GC             | Simple, low overhead                     | Poor for large heaps/many CPUs |
+| **Parallel GC** | Multiple GC threads; application pauses during GC       | High throughput                          | Longer stop-the-world pauses   |
+| **CMS**         | Performs much of GC concurrently with application       | Low pause times                          | More CPU usage; fragmentation  |
+| **G1 GC**       | Divides heap into regions and collects selected regions | Predictable pauses, good for large heaps | More complex; some overhead    |
+
+### 1. Serial GC
+
+Uses **a single thread** for garbage collection.
+
+```text
+Application → STOP
+              ↓
+          GC thread
+              ↓
+          Collection
+              ↓
+Application → RESUME
+```
+
+Good for:
+
+* Small applications
+* Small heaps
+* Single-CPU environments
+
+Enable with:
+
+```bash
+-XX:+UseSerialGC
+```
+
+---
+
+### 2. Parallel GC
+
+Uses **multiple threads** for garbage collection.
+
+```text
+             ┌─ GC Thread 1
+Application ─┼─ GC Thread 2
+             ├─ GC Thread 3
+             └─ GC Thread 4
+```
+
+The application generally pauses while the GC performs its work (**stop-the-world**).
+
+Its primary goal is **high throughput**.
+
+Enable with:
+
+```bash
+-XX:+UseParallelGC
+```
+
+**Java 8 note:** Parallel GC was the default collector in many Java 8 server-class configurations.
+
+---
+
+### 3. CMS — Concurrent Mark Sweep
+
+CMS was designed primarily to reduce **GC pause times**.
+
+It performs much of its work **concurrently with the application**.
+
+Simplified process:
+
+```text
+Initial Mark → Concurrent Mark → Remark → Concurrent Sweep
+    STOP             RUN          STOP        RUN
+```
+
+Advantages:
+
+* Lower pause times than traditional stop-the-world collectors
+* Useful for applications sensitive to latency
+
+Disadvantages:
+
+* Uses additional CPU
+* Can suffer from **heap fragmentation**
+* Can have concurrent-mode failures if it cannot reclaim memory quickly enough
+
+Enable with:
+
+```bash
+-XX:+UseConcMarkSweepGC
+```
+
+**Important:** CMS was deprecated in later Java releases and removed in Java 14, but it is relevant when studying Java 8.
+
+---
+
+### 4. G1 GC — Garbage First
+
+G1 takes a different approach. Instead of treating the heap simply as Young + Old contiguous spaces, it divides the heap into many **regions**.
+
+```text
+Heap
+┌────┬────┬────┬────┬────┬────┐
+│ R1 │ R2 │ R3 │ R4 │ R5 │ R6 │
+├────┼────┼────┼────┼────┼────┤
+│ R7 │ R8 │ R9 │R10 │R11 │R12 │
+└────┴────┴────┴────┴────┴────┘
+       ↑
+   Regions with
+   most garbage
+   are collected first
+```
+
+The goal is to provide **more predictable pause times** while efficiently handling larger heaps.
+
+Enable with:
+
+```bash
+-XX:+UseG1GC
+```
+
+### Easy way to remember
+
+```text
+Serial   → 1 GC thread
+Parallel → Many GC threads → throughput
+CMS      → Concurrent work → low pauses
+G1       → Heap regions → predictable pauses
+```
+
+**For interviews:** The biggest distinction is **Parallel GC focuses on throughput, CMS focuses on low pause times, and G1 focuses on predictable pause times while efficiently managing large heaps.**
 
 ---
 
