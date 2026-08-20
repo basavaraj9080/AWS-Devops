@@ -357,6 +357,147 @@ Metaspace stores class metadata and uses native memory.
 
 ---
 
+In **Java 8**, memory management is mainly handled by the **JVM + Garbage Collector (GC)**. You generally don't manually allocate or free memory like in C/C++.
+
+### 1. JVM memory areas
+
+A simplified Java 8 memory layout is:
+
+```text
+                    JVM Memory
+                        │
+        ┌───────────────┼───────────────┐
+        ↓               ↓               ↓
+      Heap          Metaspace       Thread Memory
+        │                               │
+  ┌─────┴─────┐                    ┌────┴────┐
+  ↓           ↓                    ↓         ↓
+Young       Old                  Stack      PC Register
+Generation Generation
+  │
+  ├── Eden
+  ├── Survivor 0
+  └── Survivor 1
+```
+
+### 2. Heap memory
+
+The **heap** stores objects created by your application.
+
+```java
+Student s = new Student();
+```
+
+The `Student` object is allocated on the heap.
+
+In Java 8, the heap is broadly divided into:
+
+* **Young Generation**
+
+  * Eden
+  * Survivor spaces (S0 and S1)
+* **Old Generation**
+
+New objects generally start in **Eden**.
+
+### 3. Garbage Collection
+
+Java automatically identifies objects that are no longer reachable and reclaims their memory.
+
+For example:
+
+```java
+Student s = new Student();
+
+s = null;
+```
+
+The `Student` object may now become **eligible for garbage collection**, assuming there are no other references to it.
+
+The GC eventually removes it and makes that heap memory available again.
+
+> **Eligible for GC does not mean immediately garbage collected.** The JVM decides when collection occurs.
+
+### 4. Young Generation → Old Generation
+
+A simplified lifecycle looks like:
+
+```text
+New Object
+    ↓
+  Eden
+    ↓
+Minor GC
+    ↓
+Survivor Space
+    ↓
+Repeated GC / aging
+    ↓
+Old Generation
+    ↓
+Major/Full GC
+```
+
+Objects that survive multiple young-generation collections can eventually be promoted to the **Old Generation**.
+
+### 5. Metaspace — important Java 8 change
+
+Java 7 and earlier used **PermGen** for class metadata.
+
+Java 8 replaced PermGen with **Metaspace**.
+
+```text
+Java 7:  PermGen
+Java 8+: Metaspace
+```
+
+Metaspace stores information about loaded classes and uses **native memory** rather than being part of the normal Java heap.
+
+### 6. Stack memory
+
+Each thread has its own **stack**.
+
+A method call creates a stack frame containing things such as local variables and method execution information.
+
+```java
+void calculate() {
+    int x = 10;
+}
+```
+
+`x` is part of the method's stack frame. When `calculate()` returns, that frame is removed automatically.
+
+### 7. Who manages what?
+
+| Memory           | Managed by        | Purpose                   |
+| ---------------- | ----------------- | ------------------------- |
+| Heap             | Garbage Collector | Objects                   |
+| Young Generation | Garbage Collector | New/short-lived objects   |
+| Old Generation   | Garbage Collector | Long-lived objects        |
+| Metaspace        | JVM               | Class metadata            |
+| Stack            | JVM/thread        | Method calls & local data |
+| PC Register      | JVM/thread        | Current instruction       |
+
+### 8. Java 8 garbage collectors
+
+Java 8 provides several GC options, including:
+
+* **Serial GC**
+* **Parallel GC** — commonly the default in Java 8 server environments
+* **CMS (Concurrent Mark Sweep)**
+* **G1 GC** — available in Java 8 and designed for large heaps with more predictable pause behavior
+
+The exact collector used depends on JVM options and Java 8 update/version.
+
+### Interview answer
+
+If asked **“How does memory management work in Java 8?”**, a good concise answer is:
+
+> **Java 8 uses JVM-managed memory. Objects are allocated mainly on the heap, which is divided into Young and Old generations. New objects generally enter Eden, and objects that survive garbage collections may be promoted to the Old Generation. The Garbage Collector automatically identifies unreachable objects and reclaims their heap memory. Java 8 also replaced PermGen with Metaspace, which stores class metadata in native memory. Each thread has its own stack for method execution and local data.**
+
+
+---
+
 # 6. What is a memory leak in Java?
 
 A memory leak occurs when an application **no longer needs an object but still maintains a reference to it**, preventing Garbage Collection.
