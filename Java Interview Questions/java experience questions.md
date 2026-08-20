@@ -672,13 +672,46 @@ java.lang.OutOfMemoryError: Java heap space
 
 ### Common causes
 
-* Static collections
-* Unclosed resources
-* List/Map growing indefinitely
-* Incorrect caching
-* Event listeners not removed
-* ThreadLocal misuse
-* Long-lived references
+Static collections
+
+static List<Object> cache = new ArrayList<>();
+
+Unremoved listeners/callbacks
+
+button.addActionListener(listener);
+
+If the listener is never removed, it may keep objects alive.
+
+Caches without limits
+
+Map<String, Object> cache = new HashMap<>();
+
+If entries are continually added and never removed, memory grows.
+
+Unclosed resources
+Examples include files, database connections, and streams. These are technically resource leaks rather than ordinary heap leaks, but they can also cause memory/resource exhaustion.
+Long-lived objects holding references to short-lived objects
+Memory leak vs. normal garbage collection
+Without leak:
+
+
+Object → no references
+          ↓
+       GC collects it
+          ↓
+       Memory freed
+
+
+
+
+With leak:
+
+
+Object → still referenced
+          ↓
+       GC cannot collect it
+          ↓
+       Memory remains occupied
 
 ### Interview answer
 
