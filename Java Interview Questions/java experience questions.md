@@ -188,6 +188,84 @@ Used when Java interacts with **native code**, generally through JNI.
 > “The main JVM memory areas are Heap, Stack, Metaspace, PC Register, and Native Method Stack. Heap stores objects and is managed by garbage collection. Each thread has its own stack for method calls and local variables. In Java 8, class metadata is stored in Metaspace instead of PermGen.”
 
 ---
+In Java, **JVM memory** is divided into several runtime data areas. The most important ones are:
+
+### 1. Heap
+
+* Stores **objects and arrays** created using `new`.
+* Shared by all threads.
+* Managed by the **Garbage Collector (GC)**.
+* Usually divided into:
+
+  * **Young Generation**
+
+    * Eden
+    * Survivor spaces (S0/S1)
+  * **Old Generation**
+* Example:
+
+  ```java
+  Person p = new Person();
+  ```
+
+  The `Person` object lives on the heap.
+
+### 2. Stack
+
+* Each thread has its **own stack**.
+* Stores:
+
+  * Local variables
+  * Method parameters
+  * Method call frames
+  * References to objects
+* Automatically cleaned up when a method returns.
+* Excessive recursion can cause `StackOverflowError`.
+
+Example:
+
+```java
+void test() {
+    int x = 10;        // stack
+    Person p = new Person(); // reference on stack, object on heap
+}
+```
+
+### 3. Method Area / Metaspace
+
+* Stores **class-level information**, such as:
+
+  * Class metadata
+  * Method information
+  * Runtime constant pool
+  * Static fields (conceptually associated with class metadata)
+* In **Java 8+**, the traditional PermGen area was replaced by **Metaspace**.
+* Metaspace uses **native memory**, rather than the Java heap.
+
+### 4. PC Register (Program Counter)
+
+* Each thread has its own PC register.
+* Keeps track of the **current JVM instruction** being executed by that thread.
+* Very small and generally not something developers manage directly.
+
+### 5. Native Method Stack
+
+* Used when Java code calls **native methods**, typically written in C/C++ through JNI.
+* Each thread can have its own native method stack.
+
+### Quick comparison
+
+| Memory area             | Shared?          | Main purpose                  |
+| ----------------------- | ---------------- | ----------------------------- |
+| **Heap**                | Yes              | Objects and arrays            |
+| **Stack**               | No, per thread   | Method calls, local variables |
+| **Metaspace**           | Generally shared | Class metadata                |
+| **PC Register**         | No, per thread   | Current JVM instruction       |
+| **Native Method Stack** | No, per thread   | Native/JNI method execution   |
+
+**Interview shortcut:** Remember **Heap = objects, Stack = method execution, Metaspace = class information, PC = current instruction, Native Stack = native code**.
+
+---
 
 # 4. What is auxiliary memory?
 
