@@ -881,7 +881,7 @@ Therefore JVM separates objects into generations to make GC more efficient.
 
 ---
 
-# 9. Difference between Stack and Heap memory
+# 9. Difference between Stack and Heap memory 
 
 | Stack                                      | Heap                             |
 | ------------------------------------------ | -------------------------------- |
