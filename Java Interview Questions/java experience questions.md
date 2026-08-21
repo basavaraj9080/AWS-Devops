@@ -924,78 +924,120 @@ Employee object
 
 # 10. Difference between Exception and RuntimeException
 
-The key difference is **checked vs unchecked exception**.
+## Exception vs RuntimeException in Java
 
-### Exception
+The easiest way to remember it is:
 
-`Exception` is the parent class for many checked exceptions.
+```text
+                 Throwable
+                    │
+              ┌─────┴─────┐
+              │            │
+          Exception       Error
+              │
+       ┌──────┴──────┐
+       │             │
+   Checked      RuntimeException
+   Exception      (Unchecked)
+```
+
+### 1. `Exception`
+
+`Exception` is the parent class for conditions that a program may reasonably handle.
+
+There are two important categories:
+
+```text
+Exception
+   │
+   ├── Checked Exception
+   │      ├── IOException
+   │      ├── SQLException
+   │      └── ClassNotFoundException
+   │
+   └── RuntimeException
+          ├── NullPointerException
+          ├── ArithmeticException
+          ├── ArrayIndexOutOfBoundsException
+          └── IllegalArgumentException
+```
+
+### 2. `RuntimeException`
+
+`RuntimeException` is a **subclass of `Exception`**.
+
+It represents exceptions that generally result from programming errors or invalid runtime conditions.
 
 Example:
 
 ```java
-try {
-    FileInputStream file =
-        new FileInputStream("data.txt");
-} catch (IOException e) {
-    // handle
-}
-```
-
-Or:
-
-```java
-void readFile() throws IOException {
-}
-```
-
-The compiler requires you to handle or declare checked exceptions.
-
----
-
-### RuntimeException
-
-`RuntimeException` is an **unchecked exception**.
-
-Example:
-
-```java
-int result = 10 / 0;
+String name = null;
+System.out.println(name.length());
 ```
 
 This causes:
 
 ```text
-ArithmeticException
+NullPointerException
+       ↑
+RuntimeException
+       ↑
+Exception
+       ↑
+Throwable
 ```
 
-Another example:
+---
+
+## Main Difference
+
+| Feature                   | Exception                                         | RuntimeException                 |
+| ------------------------- | ------------------------------------------------- | -------------------------------- |
+| Relationship              | Parent class                                      | Child of `Exception`             |
+| Checked?                  | Can be checked or unchecked depending on subclass | **Unchecked**                    |
+| Compiler forces handling? | Checked subclasses → Yes                          | **No**                           |
+| Usually caused by         | External/unexpected conditions                    | Programming errors/invalid state |
+| Example                   | `IOException`                                     | `NullPointerException`           |
+
+### Checked Exception
 
 ```java
-String name = null;
-name.length();
+void readFile() throws IOException {
+    FileInputStream file = new FileInputStream("data.txt");
+}
 ```
 
-Causes:
+The compiler requires you to **catch or declare** the checked exception.
 
-```text
-NullPointerException
+### RuntimeException
+
+```java
+void calculate() {
+    int result = 10 / 0;
+}
 ```
 
-You don't have to explicitly catch or declare these.
+This produces `ArithmeticException`, but the compiler does **not** force you to catch or declare it.
 
-### Hierarchy
+---
+
+### ⭐ Easy interview answer
+
+> **RuntimeException is a subclass of Exception and represents unchecked exceptions. Checked exceptions must be handled or declared at compile time, whereas RuntimeExceptions do not have this requirement.**
+
+### Remember this
 
 ```text
-Throwable
-   |
 Exception
-   |
-RuntimeException
+   │
+   ├── Checked → Compiler says:
+   │             "Handle it or declare it!"
+   │
+   └── RuntimeException → Compiler says:
+                         "I won't force you."
 ```
 
-### Interview answer
-
-> “The major difference is that checked exceptions, which are subclasses of Exception but not RuntimeException, are checked by the compiler and must be handled or declared. RuntimeException and its subclasses are unchecked and generally represent programming errors or invalid runtime state, such as NullPointerException or IllegalArgumentException.”
+**Important:** Saying "`Exception` = checked exception" is technically incorrect. `Exception` is the parent class; **checked exceptions are the subclasses of `Exception` that are not `RuntimeException` (or its subclasses).**
 
 ---
 
