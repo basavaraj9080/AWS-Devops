@@ -813,6 +813,9 @@ This could indicate objects are continuously being retained.
 
 > “First I monitor heap usage and GC behavior. If memory continuously increases even after GC, I take a heap dump using tools like jcmd and analyze it using Eclipse MAT or JVisualVM. I check the biggest retained objects and their reference paths. Then I identify the code holding unnecessary references, such as static collections, caches, listeners, or ThreadLocal values, and fix the lifecycle of those objects.”
 
+<img width="1024" height="1536" alt="image" src="https://github.com/user-attachments/assets/817f00c6-3c40-42e5-a7a4-a389dfc94c61" />
+
+
 ---
 
 # 8. How does Garbage Collection work in Java?
