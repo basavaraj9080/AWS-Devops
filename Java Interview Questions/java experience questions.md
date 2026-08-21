@@ -1043,81 +1043,409 @@ Exception
 
 # 11. Extending RuntimeException vs Exception for a global exception
 
-Suppose we're creating a custom exception:
+Yes. This is a very common **Spring Boot interview question**. The key is to understand that **“global exception handling”** and **“which class you extend”** are two different things.
+
+## 1. First understand the hierarchy
+
+```text
+                         Throwable
+                            │
+                      ┌─────┴─────┐
+                      │           │
+                  Exception      Error
+                      │
+             ┌────────┴────────┐
+             │                 │
+        Checked Exception   RuntimeException
+             │                 │
+       IOException          YourCustomException
+       SQLException         etc.
+```
+
+So you can create your custom exception in two ways:
 
 ```java
-public class EmployeeNotFoundException
-        extends RuntimeException {
+// Checked exception
+public class MyException extends Exception {
 }
 ```
 
-### If we extend RuntimeException
-
-It's unchecked.
-
-We don't have to write:
+or
 
 ```java
-throws EmployeeNotFoundException
-```
-
-everywhere.
-
-This is commonly used in **Spring Boot REST applications** for business/application exceptions.
-
-Example:
-
-```java
-throw new EmployeeNotFoundException("Employee not found");
-```
-
-A global exception handler can convert it into:
-
-```text
-HTTP 404 Not Found
+// Unchecked exception
+public class MyException extends RuntimeException {
+}
 ```
 
 ---
 
-### If we extend Exception
+# 2. What does "global exception" mean?
+
+In Spring Boot, **global exception handling** usually means using:
 
 ```java
-public class EmployeeNotFoundException
-        extends Exception {
-}
+@ControllerAdvice
 ```
 
-It's checked.
-
-The caller must handle or declare it:
+or
 
 ```java
-public Employee getEmployee()
-        throws EmployeeNotFoundException {
-}
+@RestControllerAdvice
 ```
 
-This can make APIs more verbose.
-
-### Which one should you use?
-
-There isn't a universal rule.
-
-A common practical approach is:
+For example:
 
 ```text
-Business/application exception
-        ↓
-RuntimeException
+             Controller
+                 │
+                 ↓
+          Service / Repository
+                 │
+                 ↓
+       Custom Exception thrown
+                 │
+                 ↓
+        @RestControllerAdvice
+                 │
+                 ↓
+          @ExceptionHandler
+                 │
+                 ↓
+          HTTP Error Response
 ```
 
-when callers are not expected to recover locally.
+**Important:** `@RestControllerAdvice` does NOT require your exception to extend `RuntimeException`.
 
-Use a checked exception when the caller is genuinely expected to **handle/recover from the condition**.
+You can globally handle either a checked or unchecked exception.
 
-### Interview answer
+---
 
-> “If my global business exception extends RuntimeException, it is unchecked, so I don't have to propagate throws declarations through every service and controller method. In Spring applications, I commonly use RuntimeException for business exceptions and handle them centrally with @ControllerAdvice. I would use checked Exception when the caller is expected to explicitly recover from the condition.”
+# 3. Extending `Exception`
+
+Example:
+
+```java
+public class UserNotFoundException extends Exception {
+
+    public UserNotFoundException(String message) {
+        super(message);
+    }
+}
+```
+
+Now Java treats it as a **checked exception**.
+
+The compiler forces you to handle or declare it:
+
+```java
+public User getUser(Long id) throws UserNotFoundException {
+    
+    if (user == null) {
+        throw new UserNotFoundException("User not found");
+    }
+
+    return user;
+}
+```
+
+And the controller/service chain may need:
+
+```text
+Service
+   │
+   │ throws UserNotFoundException
+   ↓
+Controller
+   │
+   │ must handle OR declare
+   ↓
+@RestControllerAdvice
+```
+
+### Problem
+
+For application/business exceptions, this can create a lot of:
+
+```java
+throws UserNotFoundException
+```
+
+through multiple layers.
+
+---
+
+# 4. Extending `RuntimeException`
+
+Example:
+
+```java
+public class UserNotFoundException extends RuntimeException {
+
+    public UserNotFoundException(String message) {
+        super(message);
+    }
+}
+```
+
+Now it is an **unchecked exception**.
+
+You can simply throw it:
+
+```java
+public User getUser(Long id) {
+
+    if (user == null) {
+        throw new UserNotFoundException("User not found");
+    }
+
+    return user;
+}
+```
+
+You don't have to write:
+
+```java
+throws UserNotFoundException
+```
+
+on every method.
+
+The exception can travel up the call stack until Spring's global exception handler catches it.
+
+```text
+Controller
+    ↑
+    │
+Service
+    ↑
+    │
+Repository
+    │
+    ↓
+throw UserNotFoundException
+    │
+    ↓
+Spring propagates it
+    │
+    ↓
+@RestControllerAdvice
+    │
+    ↓
+@ExceptionHandler
+    │
+    ↓
+HTTP 404 Response
+```
+
+---
+
+# 5. Global exception handling example
+
+### Custom exception
+
+```java
+public class UserNotFoundException extends RuntimeException {
+
+    public UserNotFoundException(String message) {
+        super(message);
+    }
+}
+```
+
+### Service
+
+```java
+public User getUser(Long id) {
+
+    return userRepository.findById(id)
+        .orElseThrow(() ->
+            new UserNotFoundException("User not found"));
+}
+```
+
+### Global handler
+
+```java
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<String> handleUserNotFound(
+            UserNotFoundException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage());
+    }
+}
+```
+
+The flow becomes:
+
+```text
+                 Client
+                   │
+                   ↓
+              GET /users/10
+                   │
+                   ↓
+              Controller
+                   │
+                   ↓
+                Service
+                   │
+                   ↓
+              Repository
+                   │
+                   ↓
+             User not found
+                   │
+                   ↓
+      throw UserNotFoundException
+                   │
+                   ↓
+        ┌─────────────────────┐
+        │ @RestControllerAdvice│
+        │                     │
+        │ @ExceptionHandler   │
+        └──────────┬──────────┘
+                   │
+                   ↓
+             HTTP 404
+        "User not found"
+```
+
+---
+
+# 6. Why is `RuntimeException` usually preferred?
+
+For **Spring Boot application/business exceptions**, `RuntimeException` is commonly preferred because:
+
+### With `Exception`
+
+```text
+Service
+   ↓
+throws UserNotFoundException
+   ↓
+Controller
+   ↓
+throws UserNotFoundException
+   ↓
+Other method
+   ↓
+throws UserNotFoundException
+```
+
+You end up propagating `throws` declarations through the application.
+
+### With `RuntimeException`
+
+```text
+Service
+   ↓
+throw UserNotFoundException
+   ↓
+Controller
+   ↓
+Spring
+   ↓
+Global Exception Handler
+```
+
+No need to explicitly declare the exception everywhere.
+
+---
+
+# 7. When should you use `Exception` instead?
+
+Use a **checked exception** when the caller is genuinely expected to **recover from or explicitly deal with the condition**.
+
+For example:
+
+```java
+try {
+    readFile();
+} catch (IOException e) {
+    // recover / show alternative / handle failure
+}
+```
+
+The caller has a meaningful decision to make.
+
+For many **business/application exceptions**, however, there isn't much value in forcing every layer to declare the exception.
+
+Examples:
+
+```text
+UserNotFoundException
+OrderNotFoundException
+InsufficientBalanceException
+InvalidOrderStateException
+PaymentFailedException
+```
+
+These are commonly implemented as:
+
+```java
+extends RuntimeException
+```
+
+and handled centrally.
+
+---
+
+# 8. Easy comparison for interview
+
+| `extends Exception`                          | `extends RuntimeException`                 |
+| -------------------------------------------- | ------------------------------------------ |
+| Checked exception                            | Unchecked exception                        |
+| Compiler requires handle/declare             | Compiler doesn't require handle/declare    |
+| Can create `throws` propagation              | No mandatory `throws` propagation          |
+| Useful when caller should explicitly recover | Common for business/application exceptions |
+| More verbose in layered applications         | Cleaner with global exception handling     |
+| Can be handled by `@RestControllerAdvice`    | Can be handled by `@RestControllerAdvice`  |
+
+---
+
+# ⭐ Best interview answer
+
+If the interviewer asks:
+
+**"For a global exception in Spring Boot, should I extend Exception or RuntimeException?"**
+
+You can answer:
+
+> **Global exception handling and exception type are separate concepts. `@RestControllerAdvice` can handle both checked and unchecked exceptions. However, for custom business/application exceptions in Spring Boot, I generally prefer extending `RuntimeException` because it is unchecked, so I don't have to propagate `throws` declarations through every layer. The exception can propagate naturally to the global `@RestControllerAdvice`, where `@ExceptionHandler` converts it into the appropriate HTTP response. I would use a checked exception when the caller is expected to explicitly handle or recover from the condition.**
+
+### 🧠 Super-easy memory trick
+
+```text
+              CUSTOM EXCEPTION
+                     │
+          ┌──────────┴──────────┐
+          │                     │
+     extends Exception    extends RuntimeException
+          │                     │
+       CHECKED              UNCHECKED
+          │                     │
+   "Handle or Declare"    "No compiler forcing"
+          │                     │
+          └──────────┬──────────┘
+                     ↓
+             Global Handler
+                     │
+              @RestControllerAdvice
+                     │
+              @ExceptionHandler
+                     ↓
+                HTTP Response
+```
+
+**Remember:**
+
+> **`RuntimeException` is usually the practical choice for custom business exceptions in Spring Boot, while `@RestControllerAdvice` is what makes the handling global.**
 
 ---
 
