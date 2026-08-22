@@ -2688,3 +2688,1329 @@ For example, for memory leak:
 > **Troubleshooting:** “I would analyze GC behavior and take a heap dump using jcmd, then inspect retained objects with a tool such as Eclipse MAT.”
 
 That style will sound much more like **real project experience** than a textbook definition.
+
+
+---
+---
+---
+Absolutely. Below is an **interview-focused Java 8 guide** for all 11 questions, using **real-world examples, simple diagrams, code, and memory tricks**.
+
+---
+
+# Java 8 & Functional Programming — Interview Guide
+
+## 1. What are the major features introduced in Java 8?
+
+Java 8 was a major release because it introduced **functional programming capabilities** into Java.
+
+### Major features
+
+| Feature                          | Purpose                                     |
+| -------------------------------- | ------------------------------------------- |
+| **Lambda Expressions**           | Write concise functional code               |
+| **Functional Interfaces**        | Interfaces with exactly one abstract method |
+| **Stream API**                   | Process collections declaratively           |
+| **Default Methods**              | Add implementations inside interfaces       |
+| **Static Methods in Interfaces** | Utility methods inside interfaces           |
+| **Optional**                     | Reduce null-related problems                |
+| **Method References**            | Shorter form of lambda expressions          |
+| **New Date & Time API**          | Better date/time handling                   |
+| **CompletableFuture**            | Easier asynchronous programming             |
+| **Collectors**                   | Collect/process Stream results              |
+
+### Big picture
+
+```text
+                    JAVA 8
+                       |
+       +---------------+----------------+
+       |               |                |
+    Lambda          Streams          Optional
+       |               |                |
+ Functional       Collection        Avoid some
+ Interfaces       processing        null problems
+       |
+       +---- Method References
+       |
+       +---- Default/Static methods
+```
+
+### Real-world example
+
+Before Java 8:
+
+```java
+List<String> names = Arrays.asList("John", "Mike", "David");
+
+for (String name : names) {
+    if (name.startsWith("J")) {
+        System.out.println(name);
+    }
+}
+```
+
+Java 8:
+
+```java
+names.stream()
+     .filter(name -> name.startsWith("J"))
+     .forEach(System.out::println);
+```
+
+**Interview one-liner:**
+
+> Java 8 introduced functional programming features such as Lambda expressions, Functional Interfaces and Streams, along with Optional, method references, default/static interface methods and the new Date-Time API.
+
+---
+
+# 2. What is a Functional Interface?
+
+A **Functional Interface** is an interface that contains **exactly one abstract method**.
+
+It can have:
+
+* One abstract method
+* Multiple `default` methods
+* Multiple `static` methods
+
+Example:
+
+```java
+@FunctionalInterface
+interface Calculator {
+    int calculate(int a, int b);
+}
+```
+
+Now we can use a lambda:
+
+```java
+Calculator addition = (a, b) -> a + b;
+
+System.out.println(addition.calculate(10, 20));
+```
+
+Output:
+
+```text
+30
+```
+
+### Diagram
+
+```text
+        Calculator Interface
+                |
+                |
+        calculate(a, b)
+        [ONE abstract method]
+                |
+                v
+          Lambda Expression
+          (a, b) -> a + b
+                |
+                v
+              30
+```
+
+### Common built-in Functional Interfaces
+
+Java provides many in `java.util.function`.
+
+```text
+Predicate<T>   → T → boolean
+Function<T,R>  → T → R
+Consumer<T>    → T → void
+Supplier<T>    → () → T
+```
+
+Examples:
+
+```java
+Predicate<Integer> isEven = n -> n % 2 == 0;
+
+Function<String, Integer> length = s -> s.length();
+
+Consumer<String> print = s -> System.out.println(s);
+
+Supplier<Double> random = () -> Math.random();
+```
+
+### Memory trick
+
+**P-F-C-S**
+
+> **P**redicate = **P**rovides boolean
+> **F**unction = transforms
+> **C**onsumer = consumes
+> **S**upplier = supplies
+
+---
+
+# 3. Functional Interface vs Normal Interface
+
+The main difference is the **number of abstract methods**.
+
+| Functional Interface                   | Normal Interface                    |
+| -------------------------------------- | ----------------------------------- |
+| Exactly one abstract method            | Can have multiple abstract methods  |
+| Supports lambda expressions            | Cannot directly represent a lambda  |
+| `@FunctionalInterface` can be used     | Annotation generally not applicable |
+| Used heavily in functional programming | General-purpose contract            |
+
+### Functional interface
+
+```java
+@FunctionalInterface
+interface Calculator {
+    int add(int a, int b);
+}
+```
+
+Lambda:
+
+```java
+Calculator c = (a, b) -> a + b;
+```
+
+### Normal interface
+
+```java
+interface Calculator {
+    int add(int a, int b);
+    int subtract(int a, int b);
+}
+```
+
+You **cannot** do:
+
+```java
+// Invalid
+Calculator c = (a, b) -> a + b;
+```
+
+because Java doesn't know whether the lambda is implementing `add()` or `subtract()`.
+
+### Important interview point
+
+A functional interface can contain:
+
+```java
+interface MyInterface {
+
+    void method1();       // abstract
+
+    default void method2() {
+        System.out.println("default");
+    }
+
+    static void method3() {
+        System.out.println("static");
+    }
+}
+```
+
+That's still a functional interface because it has **only one abstract method**.
+
+---
+
+# 4. Explain Lambda Expressions with an example
+
+A **lambda expression** is an anonymous function.
+
+It allows us to pass behavior as a parameter.
+
+### Traditional approach
+
+```java
+List<String> names = Arrays.asList("John", "David", "Mike");
+
+Collections.sort(names, new Comparator<String>() {
+    @Override
+    public int compare(String a, String b) {
+        return a.compareTo(b);
+    }
+});
+```
+
+Java 8:
+
+```java
+Collections.sort(names, (a, b) -> a.compareTo(b));
+```
+
+Even shorter:
+
+```java
+names.sort(String::compareTo);
+```
+
+### Lambda syntax
+
+```text
+(parameters) -> expression
+```
+
+or
+
+```text
+(parameters) -> {
+    statements;
+}
+```
+
+Examples:
+
+```java
+() -> System.out.println("Hello")
+
+x -> x * 2
+
+(a, b) -> a + b
+
+(a, b) -> {
+    int result = a + b;
+    return result;
+}
+```
+
+### Real-world example
+
+Suppose an e-commerce application wants to filter expensive products.
+
+```java
+List<Product> products = ...;
+
+products.stream()
+        .filter(p -> p.getPrice() > 1000)
+        .forEach(p -> System.out.println(p.getName()));
+```
+
+Here:
+
+```text
+p -> p.getPrice() > 1000
+       |
+       +---- Business rule
+```
+
+Lambda lets us pass the **behavior/rule** instead of writing a separate class.
+
+### Interview definition
+
+> A lambda expression is an anonymous function introduced in Java 8 that allows us to pass behavior as a value and is mainly used with functional interfaces.
+
+---
+
+# 5. Difference between `map()` and `filter()` in Streams
+
+This is one of the **most frequently asked Java 8 questions**.
+
+## `filter()`
+
+`filter()` is used to **select elements**.
+
+Input:
+
+```text
+1  2  3  4  5
+```
+
+Condition:
+
+```java
+n -> n % 2 == 0
+```
+
+Output:
+
+```text
+2  4
+```
+
+Diagram:
+
+```text
+1  2  3  4  5
+|  |  |  |  |
++--+--+--+--+
+     filter
+ n % 2 == 0
+     |
+     v
+    2  4
+```
+
+Example:
+
+```java
+List<Integer> numbers =
+        Arrays.asList(1, 2, 3, 4, 5);
+
+List<Integer> result =
+        numbers.stream()
+               .filter(n -> n % 2 == 0)
+               .collect(Collectors.toList());
+
+System.out.println(result);
+```
+
+Output:
+
+```text
+[2, 4]
+```
+
+---
+
+## `map()`
+
+`map()` is used to **transform elements**.
+
+Example:
+
+```java
+numbers.stream()
+       .map(n -> n * 10)
+       .collect(Collectors.toList());
+```
+
+Input:
+
+```text
+1  2  3  4  5
+```
+
+Transformation:
+
+```text
+×10
+```
+
+Output:
+
+```text
+10 20 30 40 50
+```
+
+### Key difference
+
+```text
+filter()
+   |
+   +--> Selects elements
+   +--> Usually same type
+   +--> Number of elements can decrease
+
+map()
+   |
+   +--> Transforms elements
+   +--> Type can change
+   +--> Usually same number of elements
+```
+
+### Memory trick
+
+> **filter = Which ones?**
+> **map = Change into what?**
+
+---
+
+# 6. Difference between `map()` and `flatMap()`
+
+This is another **very important interview question**.
+
+## `map()`
+
+`map()` performs **one-to-one transformation**.
+
+Example:
+
+```java
+List<String> names =
+        Arrays.asList("John", "David", "Mike");
+
+List<Integer> lengths =
+        names.stream()
+             .map(String::length)
+             .collect(Collectors.toList());
+```
+
+Result:
+
+```text
+John  → 4
+David → 5
+Mike  → 4
+
+[4, 5, 4]
+```
+
+---
+
+## `flatMap()`
+
+`flatMap()` is used when each element produces **multiple elements**, and we want to flatten them into a single stream.
+
+Example:
+
+```java
+List<List<Integer>> numbers = Arrays.asList(
+    Arrays.asList(1, 2),
+    Arrays.asList(3, 4),
+    Arrays.asList(5, 6)
+);
+```
+
+With `map()`:
+
+```java
+numbers.stream()
+       .map(list -> list.stream())
+```
+
+Conceptually:
+
+```text
+[
+ [1,2],
+ [3,4],
+ [5,6]
+]
+       |
+      map
+       |
+       v
+Stream<Stream<Integer>>
+```
+
+We have nested streams.
+
+With `flatMap()`:
+
+```java
+List<Integer> result =
+    numbers.stream()
+           .flatMap(List::stream)
+           .collect(Collectors.toList());
+```
+
+Result:
+
+```text
+[1, 2, 3, 4, 5, 6]
+```
+
+Diagram:
+
+```text
+        [[1,2], [3,4], [5,6]]
+                    |
+                 flatMap
+                    |
+       +------------+------------+
+       |            |            |
+      [1,2]        [3,4]        [5,6]
+       \             |             /
+        \            |            /
+         +-----------+-----------+
+                     |
+                     v
+           [1,2,3,4,5,6]
+```
+
+### Real-world example
+
+Suppose:
+
+```text
+Customer
+   |
+   +-- Orders
+```
+
+Each customer has multiple orders.
+
+```java
+customers.stream()
+         .flatMap(customer -> customer.getOrders().stream())
+         .collect(Collectors.toList());
+```
+
+This gives **all orders from all customers** in one stream.
+
+### Memory trick
+
+> **map = transform**
+> **flatMap = transform + flatten**
+
+---
+
+# 7. Difference between `findFirst()` and `findAny()`
+
+Both are **terminal operations** that return an `Optional<T>`.
+
+## `findFirst()`
+
+Returns the **first element according to encounter order**.
+
+```java
+List<Integer> numbers =
+        Arrays.asList(10, 20, 30, 40);
+
+Optional<Integer> result =
+        numbers.stream()
+               .findFirst();
+```
+
+Result:
+
+```text
+10
+```
+
+Diagram:
+
+```text
+10 → 20 → 30 → 40
+^
+|
+findFirst()
+```
+
+---
+
+## `findAny()`
+
+Returns **any element**.
+
+```java
+numbers.stream()
+       .findAny();
+```
+
+For a sequential stream, it will commonly return the first element, but **you should not depend on that behavior**.
+
+With a parallel stream:
+
+```java
+numbers.parallelStream()
+       .findAny();
+```
+
+It can return whichever element is conveniently available.
+
+### Why?
+
+Parallel streams process different portions concurrently.
+
+```text
+              [1 2 3 4 5 6 7 8]
+                    |
+             Parallel processing
+              /              \
+          Thread 1          Thread 2
+          [1 2 3 4]        [5 6 7 8]
+               \              /
+                \            /
+                 findAny()
+```
+
+### Difference
+
+| `findFirst()`                     | `findAny()`                                 |
+| --------------------------------- | ------------------------------------------- |
+| Respects encounter order          | Doesn't guarantee encounter order           |
+| Deterministic                     | Potentially non-deterministic               |
+| May be less efficient in parallel | Can be faster in parallel                   |
+| Use when order matters            | Use when any matching element is sufficient |
+
+### Memory trick
+
+> **First = order matters**
+> **Any = performance/flexibility**
+
+---
+
+# 8. Intermediate vs Terminal Operations
+
+This is fundamental to understanding Streams.
+
+## Intermediate operations
+
+Intermediate operations return **another Stream**.
+
+Examples:
+
+```java
+filter()
+map()
+flatMap()
+distinct()
+sorted()
+limit()
+skip()
+```
+
+They are generally **lazy**.
+
+Example:
+
+```java
+stream
+    .filter(...)
+    .map(...)
+    .distinct();
+```
+
+No actual processing needs to happen until a terminal operation is invoked.
+
+---
+
+## Terminal operations
+
+Terminal operations produce a **final result** or side effect.
+
+Examples:
+
+```java
+forEach()
+collect()
+count()
+reduce()
+findFirst()
+findAny()
+anyMatch()
+allMatch()
+noneMatch()
+```
+
+Example:
+
+```java
+numbers.stream()
+       .filter(n -> n > 10)
+       .map(n -> n * 2)
+       .collect(Collectors.toList());
+```
+
+Diagram:
+
+```text
+             STREAM
+                |
+             filter()
+          Intermediate
+                |
+             map()
+          Intermediate
+                |
+             collect()
+             Terminal
+                |
+                v
+             RESULT
+```
+
+### Important point
+
+A stream pipeline generally looks like:
+
+```text
+Source
+  |
+  v
+Intermediate → Intermediate → Intermediate
+                                  |
+                                  v
+                              Terminal
+                                  |
+                                  v
+                               Result
+```
+
+### Lazy evaluation example
+
+```java
+Stream<Integer> stream =
+    numbers.stream()
+           .filter(n -> {
+               System.out.println("filter: " + n);
+               return n > 2;
+           });
+
+System.out.println("Before terminal");
+```
+
+The filter hasn't necessarily executed yet.
+
+When we do:
+
+```java
+stream.count();
+```
+
+processing starts.
+
+### Interview one-liner
+
+> Intermediate operations are lazy and return another Stream, while terminal operations trigger stream processing and produce a result or side effect.
+
+---
+
+# 9. Difference between `forEach()` and `forEachOrdered()`
+
+Both are terminal operations.
+
+## `forEach()`
+
+Does not guarantee encounter order when using a **parallel stream**.
+
+```java
+numbers.parallelStream()
+       .forEach(System.out::println);
+```
+
+Possible output:
+
+```text
+6
+7
+3
+4
+1
+2
+5
+8
+```
+
+The exact output can vary.
+
+---
+
+## `forEachOrdered()`
+
+Maintains the encounter order.
+
+```java
+numbers.parallelStream()
+       .forEachOrdered(System.out::println);
+```
+
+Output:
+
+```text
+1
+2
+3
+4
+5
+6
+7
+8
+```
+
+Diagram:
+
+```text
+Parallel Stream
+
+        [1 2 3 4 5 6 7 8]
+               |
+        +------+------+
+        |             |
+     Thread 1      Thread 2
+     [1 2 3 4]     [5 6 7 8]
+        |             |
+        +------+------+
+               |
+          forEach()
+               |
+          Any order
+
+               VS
+
+          forEachOrdered()
+               |
+          1 2 3 4 5 6 7 8
+```
+
+### Important interview point
+
+`forEachOrdered()` can reduce the performance benefits of parallel processing because order has to be respected.
+
+### Memory trick
+
+> **forEach = speed/freedom**
+> **forEachOrdered = order**
+
+---
+
+# 10. How does `distinct()` work internally?
+
+`distinct()` removes duplicate elements from a stream.
+
+Example:
+
+```java
+List<Integer> numbers =
+        Arrays.asList(1, 2, 2, 3, 3, 3, 4);
+
+List<Integer> result =
+        numbers.stream()
+               .distinct()
+               .collect(Collectors.toList());
+```
+
+Result:
+
+```text
+[1, 2, 3, 4]
+```
+
+## How does it identify duplicates?
+
+Conceptually, it keeps track of elements that have already been seen.
+
+For a sequential **ordered** stream, you can think of it roughly as:
+
+```text
+Input
+  |
+  v
+1 → seen? No → output 1
+2 → seen? No → output 2
+2 → seen? Yes → discard
+3 → seen? No → output 3
+3 → seen? Yes → discard
+4 → seen? No → output 4
+```
+
+Conceptually:
+
+```text
+                distinct()
+                    |
+                    v
+              +-----------+
+              | seen set  |
+              +-----------+
+               /   |   \
+              1    2    3
+```
+
+The implementation uses internal state to determine whether an element has already been encountered. For object streams, duplicate detection depends on **`equals()` and `hashCode()` semantics**.
+
+### Very important interview question
+
+Consider:
+
+```java
+class Employee {
+    int id;
+    String name;
+}
+```
+
+If you do:
+
+```java
+employees.stream()
+         .distinct()
+```
+
+and haven't implemented appropriate `equals()` and `hashCode()`, two separate `Employee` objects with the same logical data may **not** be considered duplicates.
+
+### Example
+
+```java
+class Employee {
+
+    private int id;
+    private String name;
+
+    @Override
+    public boolean equals(Object o) {
+        // compare employee identity
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name);
+    }
+}
+```
+
+### Interview-level answer
+
+> `distinct()` is a stateful intermediate stream operation. It tracks previously seen elements and removes duplicates based on equality semantics. For objects, proper `equals()` and `hashCode()` implementations are important.
+
+### Advanced point
+
+Because `distinct()` must remember previously encountered values, it is a **stateful operation**, unlike a simple stateless transformation such as `map()`.
+
+---
+
+# 11. Advantages and limitations of Parallel Streams
+
+A parallel stream divides stream processing across multiple threads, usually using the **ForkJoinPool common pool**.
+
+Example:
+
+```java
+List<Integer> numbers = ...;
+
+numbers.parallelStream()
+       .map(n -> n * 2)
+       .collect(Collectors.toList());
+```
+
+Conceptually:
+
+```text
+                 Large Dataset
+                      |
+                      v
+              Parallel Stream
+                      |
+          +-----------+-----------+
+          |           |           |
+          v           v           v
+       Thread 1    Thread 2    Thread 3
+       [1..100]   [101..200]  [201..300]
+          |           |           |
+          +-----------+-----------+
+                      |
+                      v
+                   Result
+```
+
+## Advantages
+
+### 1. Faster for large datasets
+
+If the operation is CPU-intensive and the dataset is sufficiently large:
+
+```java
+numbers.parallelStream()
+       .map(this::expensiveCalculation)
+       .collect(Collectors.toList());
+```
+
+multiple CPU cores can work simultaneously.
+
+### 2. Easy to enable
+
+Instead of:
+
+```java
+numbers.stream()
+```
+
+use:
+
+```java
+numbers.parallelStream()
+```
+
+### 3. Useful for independent operations
+
+If each element can be processed independently, parallelism can be effective.
+
+---
+
+# Limitations
+
+## 1. Not always faster
+
+For a small list:
+
+```java
+Arrays.asList(1, 2, 3, 4)
+```
+
+parallel processing may actually be slower because creating/managing parallel tasks has overhead.
+
+```text
+Small data
+
+Sequential:
+Task → Result
+
+Parallel:
+Split → Tasks → Threads → Combine → Result
+
+          ↑
+       overhead
+```
+
+---
+
+## 2. Ordering can hurt performance
+
+```java
+parallelStream()
+    .forEachOrdered(...);
+```
+
+Maintaining order can reduce the benefit of parallelism.
+
+---
+
+## 3. Shared mutable state can cause problems
+
+Bad:
+
+```java
+List<Integer> result = new ArrayList<>();
+
+numbers.parallelStream()
+       .forEach(n -> result.add(n));
+```
+
+This is dangerous because multiple threads may modify the same `ArrayList`.
+
+Prefer:
+
+```java
+List<Integer> result =
+    numbers.parallelStream()
+           .collect(Collectors.toList());
+```
+
+Use appropriate thread-safe/reduction mechanisms when shared state is unavoidable.
+
+---
+
+## 4. Blocking I/O is usually a poor fit
+
+For example:
+
+```java
+parallelStream()
+    .map(this::callExternalAPI)
+```
+
+If every task waits for an external API/database response, tying up common-pool threads may be undesirable.
+
+---
+
+## 5. Harder to debug
+
+Sequential:
+
+```text
+1 → 2 → 3 → 4
+```
+
+Parallel:
+
+```text
+Thread 1 → 1, 3
+Thread 2 → 2, 4
+Thread 3 → ...
+```
+
+Execution can be non-deterministic.
+
+---
+
+# ⭐ Most Important Interview Comparison
+
+Memorize this table:
+
+| Operation          | Purpose             | Example                 |
+| ------------------ | ------------------- | ----------------------- |
+| `filter()`         | Select              | `n -> n > 10`           |
+| `map()`            | Transform           | `n -> n * 2`            |
+| `flatMap()`        | Transform + flatten | `list -> list.stream()` |
+| `distinct()`       | Remove duplicates   | `.distinct()`           |
+| `sorted()`         | Sort                | `.sorted()`             |
+| `findFirst()`      | First element       | `.findFirst()`          |
+| `findAny()`        | Any element         | `.findAny()`            |
+| `forEach()`        | Process elements    | `.forEach(...)`         |
+| `forEachOrdered()` | Process in order    | `.forEachOrdered(...)`  |
+| `collect()`        | Convert/accumulate  | `.collect(...)`         |
+
+---
+
+# 🔥 One Real-Time Example Combining Everything
+
+Imagine an **e-commerce application**.
+
+We have:
+
+```java
+class Product {
+    private String name;
+    private String category;
+    private double price;
+
+    // getters
+}
+```
+
+Products:
+
+```text
+Laptop       Electronics   80000
+Phone        Electronics   50000
+Shoes        Fashion       3000
+Watch        Fashion       5000
+Tablet       Electronics   30000
+```
+
+Requirement:
+
+> Find names of unique Electronics products costing more than ₹40,000.
+
+Stream solution:
+
+```java
+List<String> result =
+    products.stream()
+            .filter(p -> p.getCategory().equals("Electronics"))
+            .filter(p -> p.getPrice() > 40000)
+            .map(Product::getName)
+            .distinct()
+            .collect(Collectors.toList());
+```
+
+### Pipeline diagram
+
+```text
+              PRODUCTS
+                  |
+                  v
+        +-------------------+
+        | filter category   |
+        | == Electronics    |
+        +-------------------+
+                  |
+                  v
+        +-------------------+
+        | filter price      |
+        | > 40,000          |
+        +-------------------+
+                  |
+                  v
+        +-------------------+
+        | map               |
+        | Product → Name    |
+        +-------------------+
+                  |
+                  v
+        +-------------------+
+        | distinct()        |
+        +-------------------+
+                  |
+                  v
+        +-------------------+
+        | collect()         |
+        +-------------------+
+                  |
+                  v
+             List<String>
+```
+
+This one example demonstrates:
+
+* `filter()` → selection
+* `map()` → transformation
+* `distinct()` → duplicate removal
+* `collect()` → terminal operation
+* Method reference → `Product::getName`
+* Stream pipeline → declarative processing
+
+---
+
+# 🧠 11 Questions — Super-Fast Revision
+
+Before your interview, remember this:
+
+```text
+JAVA 8
+  |
+  +-- Lambda
+  |      ↓
+  |   Behavior as value
+  |
+  +-- Functional Interface
+  |      ↓
+  |   Exactly ONE abstract method
+  |
+  +-- Stream
+         |
+         +-- filter → SELECT
+         |
+         +-- map → TRANSFORM
+         |
+         +-- flatMap → FLATTEN
+         |
+         +-- distinct → REMOVE DUPLICATES
+         |
+         +-- sorted → SORT
+         |
+         +-- findFirst → FIRST
+         |
+         +-- findAny → ANY
+         |
+         +-- forEach → NO ORDER GUARANTEE
+         |
+         +-- forEachOrdered → ORDER
+         |
+         +-- collect → RESULT
+```
+
+## 🎯 Interview memory formula
+
+### `filter → map → flatMap`
+
+Think:
+
+> **FILTER = Who should stay?**
+> **MAP = What should they become?**
+> **FLATMAP = How do I combine nested results?**
+
+### `findFirst → findAny`
+
+> **FIRST = Order matters**
+> **ANY = Any result is enough**
+
+### `forEach → forEachOrdered`
+
+> **forEach = Parallel freedom**
+> **forEachOrdered = Preserve order**
+
+### Intermediate → Terminal
+
+> **Intermediate = builds the pipeline**
+> **Terminal = starts/finishes the pipeline**
+
+### Functional Interface
+
+> **One abstract method = Lambda compatible**
+
+---
+
+# ⭐ Typical Interview Follow-Up Questions
+
+Once you understand these 11, interviewers commonly go one level deeper with questions such as:
+
+1. Why are streams lazy?
+2. Can we reuse a Stream after a terminal operation?
+3. What is the difference between `Collection` and `Stream`?
+4. Why does `map()` return a Stream?
+5. Why does `flatMap()` solve nested collections?
+6. How does `Collectors.groupingBy()` work?
+7. Difference between `reduce()` and `collect()`.
+8. Difference between `orElse()` and `orElseGet()`.
+9. How does `Optional` work?
+10. What happens internally when a parallel stream executes?
+11. What is a stateful vs stateless stream operation?
+12. What are short-circuit operations?
+13. Why should we avoid side effects inside streams?
+14. How does `sorted()` differ from `distinct()` internally?
+15. What is the difference between `Predicate`, `Function`, `Consumer`, and `Supplier`?
+
+These are the **natural next-level questions** after the 11 you've listed and are especially common in Java/Spring interviews.
