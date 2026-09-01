@@ -7812,3 +7812,717 @@ That distinction is particularly valuable in **Java + Spring Boot microservices 
 [2]: https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?utm_source=chatgpt.com "HashMap (Java Platform SE 8 )"
 [3]: https://docs.spring.io/spring-framework/reference/integration/scheduling.html?utm_source=chatgpt.com "Task Execution and Scheduling :: Spring Framework"
 [4]: https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?utm_source=chatgpt.com "CompletableFuture (Java Platform SE 8 )"
+
+
+---
+---
+---
+---
+
+Absolutely. For an interview, I would **not jump directly into code**. Start with a simple design, explain the trade-offs, then show a clean Core Java implementation.
+
+# Core Java Cache — Interview-Friendly Explanation
+
+### 1. Start with the basic concept
+
+A cache stores frequently accessed data in memory so that we don't have to repeatedly fetch it from a database or another expensive source.
+
+![Image](https://images.openai.com/static-rsc-4/KhCb-PXAyLw3gsay2fFS5-HgC4dLsOZBbmT4XkHGXIKYLkJ-uCy5hF25FiDzYN3Z8hST0Dxn2cJPdftoqxqB1vdd2b_J_WV14G34Lr86H8ApJ1tm0lKX9AHTMF45IYx8xK-XpSc1KV3Txw7itHc2B_kn7yJbHmWHGXEHFrpZxupyNpDFjWTo9Iq8Qmrnj8aM?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/9Le8tw8wvHiIYLJ6hJkcPtp76uAFNpVgoStzkfzG1qDLdG_KDLN3pbF3AQf4_4_fUkQiGSfwY7WRf_cc_Mm5a3QGd-ili9n1BSfqkMaTATcWesHKlajzYOH0Zl9X6bXwKIwVzQKhvVV4YtCYs0wfY5xvzQHLogBAvoFEr88YXyZ_HYrXA6JZqrQoj-P26k5h?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/CUZpYooKSwKhZKmdEywTpZ0-XZCmLN39hQgSmMPmQcjfNjgLNi-WxjnjpnwYBxlzsWfwAM9ddx9t4I_GLHNjbuOGeK673txFcGnAeMLbK4SRJ2FlX12I-mxq3j_-U4Ys2HdZ-zEHI9SH_ALZ1hC_JyokZlwmNcDWP2CqzhRHVt03eXkRW2mpcgRc1Gczq6Mv?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/yBGU8Is3UTqXyZquFgluZC1u7aQYpXwGOABqfiKlFZY-gsTq-2Wd7t316E9v6T-D-Lv3AAnndfpoHvV3FF0R8IkayWuy8CY1SynivUHVwu_wfB_qd-mSUeKsztKhig4ZPfr0sswV9vkONZ78RRvzSKCCfAeZzU_fPNJLw8bbSTpCWUZM-DkVjhRAfwNKm3Kb?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/9QYAfazNsYuLDI5GVnqAitcOOlvO9G3rWVZMX1ilqfVxBSZHojLxCkK9OkPacx6r-HMPkEOUwsw98fnMRVR87k-8BTGKSRtDdwHzfafLU3Uamjc2ASbJ_xo3h6sHy_z6s61HBB6_B6FbDNoJm6bPB1Q6EjTODYysvSMx4F5P1r3WGs7tQ4aAxx5BwPj05wvx?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/Rbt5KxG28IHcCMgU5Vk5pvbCZpLfBD5XduDqDmuwFoBlrZKHCKFAJbU9Q1kElCqkaQg294gFqwZhzXn_mms66InL0eesjAb8ttaELPnqj7YHMn5xjOHTTvzRxiMv1cnujGt4ntXHjDL1SUgTH-gmWcJIy-OOpIeTcIqyyxlbS28wHmvnMArFjnC4nJ7m61-k?purpose=fullsize)
+
+You can explain it like this:
+
+> "I would implement a cache using an in-memory data structure such as `ConcurrentHashMap`. On every request, I first check the cache. If the value exists and has not expired, I return it — that's a cache hit. If it doesn't exist or has expired, I fetch the data from the database, put it into the cache with an expiry time, and return it."
+
+---
+
+# 2. Basic Cache Using `HashMap`
+
+The simplest implementation is:
+
+```java
+Map<String, User> cache = new HashMap<>();
+```
+
+Flow:
+
+```text
+             Request
+                |
+                v
+        +---------------+
+        |     Cache     |
+        |    HashMap    |
+        +-------+-------+
+                |
+          +-----+-----+
+          |           |
+       HIT           MISS
+          |           |
+          v           v
+      Return       Database
+      value           |
+                      v
+                  Put in Cache
+                      |
+                      v
+                   Return
+```
+
+### Example
+
+```java
+public class SimpleCache {
+
+    private final Map<String, String> cache = new HashMap<>();
+
+    public String get(String key) {
+        return cache.get(key);
+    }
+
+    public void put(String key, String value) {
+        cache.put(key, value);
+    }
+}
+```
+
+### Problem
+
+`HashMap` is **not thread-safe**.
+
+If multiple threads access it simultaneously:
+
+```text
+Thread 1 ---> cache.put()
+Thread 2 ---> cache.get()
+Thread 3 ---> cache.put()
+```
+
+you can have race conditions.
+
+So one approach is synchronization.
+
+---
+
+# 3. Thread-Safe Cache Using `synchronized`
+
+```java
+public class ThreadSafeCache {
+
+    private final Map<String, String> cache = new HashMap<>();
+
+    public synchronized String get(String key) {
+        return cache.get(key);
+    }
+
+    public synchronized void put(String key, String value) {
+        cache.put(key, value);
+    }
+}
+```
+
+Now only one thread can execute these methods at a time.
+
+### But what's the disadvantage?
+
+Synchronization can reduce concurrency.
+
+For example:
+
+```text
+Thread 1 -----> GET ----\
+                         \
+Thread 2 -----> GET -----+----> Lock
+                         /
+Thread 3 -----> PUT ----/
+```
+
+Only one thread gets access at a time.
+
+For a highly concurrent application, I would prefer `ConcurrentHashMap`.
+
+---
+
+# 4. Using `ConcurrentHashMap`
+
+```java
+private final ConcurrentHashMap<String, String> cache =
+        new ConcurrentHashMap<>();
+```
+
+Example:
+
+```java
+public class Cache {
+
+    private final ConcurrentHashMap<String, String> cache =
+            new ConcurrentHashMap<>();
+
+    public String get(String key) {
+        return cache.get(key);
+    }
+
+    public void put(String key, String value) {
+        cache.put(key, value);
+    }
+}
+```
+
+`ConcurrentHashMap` allows multiple threads to access the cache concurrently.
+
+### Interview answer
+
+> "`ConcurrentHashMap` is preferable to synchronizing an entire `HashMap` because it provides thread-safe operations with better concurrency. Multiple threads can read and update different entries without one global lock."
+
+---
+
+# 5. How do you implement TTL?
+
+This is a very common follow-up.
+
+**TTL = Time To Live**
+
+For example:
+
+```text
+User data inserted
+       |
+       v
+10:00:00
+       |
+       | TTL = 5 minutes
+       |
+       v
+10:05:00
+       |
+       v
+   EXPIRED
+```
+
+We can store both the value and its expiry time.
+
+### Cache Entry
+
+```java
+public class CacheEntry<V> {
+
+    private final V value;
+    private final long expiryTime;
+
+    public CacheEntry(V value, long ttlMillis) {
+        this.value = value;
+        this.expiryTime =
+                System.currentTimeMillis() + ttlMillis;
+    }
+
+    public V getValue() {
+        return value;
+    }
+
+    public boolean isExpired() {
+        return System.currentTimeMillis() > expiryTime;
+    }
+}
+```
+
+---
+
+# 6. TTL Cache Using `ConcurrentHashMap`
+
+```java
+public class TTLCache<K, V> {
+
+    private final ConcurrentHashMap<K, CacheEntry<V>> cache =
+            new ConcurrentHashMap<>();
+
+    public void put(K key, V value, long ttlMillis) {
+        cache.put(key, new CacheEntry<>(value, ttlMillis));
+    }
+
+    public V get(K key) {
+
+        CacheEntry<V> entry = cache.get(key);
+
+        if (entry == null) {
+            return null;
+        }
+
+        if (entry.isExpired()) {
+            cache.remove(key);
+            return null;
+        }
+
+        return entry.getValue();
+    }
+}
+```
+
+### Usage
+
+```java
+TTLCache<String, String> cache = new TTLCache<>();
+
+cache.put("user:101", "John", 5000);
+
+System.out.println(cache.get("user:101"));
+```
+
+The entry is valid for **5 seconds**.
+
+After 5 seconds:
+
+```text
+GET user:101
+      |
+      v
+Cache Entry exists?
+      |
+     YES
+      |
+      v
+Expired?
+  /       \
+NO        YES
+ |         |
+Return    Remove
+Value     Entry
+            |
+            v
+          MISS
+```
+
+---
+
+# 7. Important TTL Interview Point
+
+The above implementation uses **lazy eviction**.
+
+That means expired entries are removed when somebody tries to access them.
+
+But what if nobody accesses the entry?
+
+It stays in memory.
+
+That can potentially cause a **memory leak / memory growth problem**.
+
+So we can use scheduled eviction.
+
+---
+
+# 8. TTL + `ScheduledExecutorService`
+
+We can schedule removal when an entry is inserted.
+
+```java
+public class ScheduledCache<K, V> {
+
+    private final ConcurrentHashMap<K, V> cache =
+            new ConcurrentHashMap<>();
+
+    private final ScheduledExecutorService scheduler =
+            Executors.newScheduledThreadPool(1);
+
+    public void put(K key, V value, long ttl, TimeUnit unit) {
+
+        cache.put(key, value);
+
+        scheduler.schedule(
+                () -> cache.remove(key),
+                ttl,
+                unit
+        );
+    }
+
+    public V get(K key) {
+        return cache.get(key);
+    }
+
+    public void shutdown() {
+        scheduler.shutdown();
+    }
+}
+```
+
+Usage:
+
+```java
+cache.put(
+    "user:101",
+    "John",
+    5,
+    TimeUnit.SECONDS
+);
+```
+
+After 5 seconds:
+
+```text
+             PUT
+              |
+              v
+       +--------------+
+       | ConcurrentMap |
+       +------+-------+
+              |
+              |
+       Schedule removal
+              |
+              v
+       +--------------+
+       | 5 seconds     |
+       +------+-------+
+              |
+              v
+          REMOVE KEY
+```
+
+### Interview explanation
+
+> "For TTL, I can store an expiry timestamp and perform lazy expiration during reads. If I want expired entries to be proactively removed even when they aren't accessed, I can use `ScheduledExecutorService`."
+
+---
+
+# 9. LRU Cache Using `LinkedHashMap`
+
+Another common interview question is:
+
+> "How would you implement an LRU cache?"
+
+**LRU = Least Recently Used**
+
+Suppose the cache capacity is 3:
+
+```text
+Cache:
+
+A
+B
+C
+```
+
+If we access `A`:
+
+```text
+B
+C
+A
+```
+
+Now if we add `D`:
+
+```text
+C
+A
+D
+```
+
+`B` is removed because it was least recently used.
+
+Java's `LinkedHashMap` makes this relatively easy.
+
+```java
+public class LRUCache<K, V>
+        extends LinkedHashMap<K, V> {
+
+    private final int capacity;
+
+    public LRUCache(int capacity) {
+
+        super(capacity, 0.75f, true);
+
+        this.capacity = capacity;
+    }
+
+    @Override
+    protected boolean removeEldestEntry(
+            Map.Entry<K, V> eldest) {
+
+        return size() > capacity;
+    }
+}
+```
+
+Usage:
+
+```java
+LRUCache<Integer, String> cache =
+        new LRUCache<>(3);
+
+cache.put(1, "A");
+cache.put(2, "B");
+cache.put(3, "C");
+
+cache.get(1);
+
+cache.put(4, "D");
+```
+
+Result:
+
+```text
+Before:
+
+1 -> A
+2 -> B
+3 -> C
+
+Access 1:
+
+2 -> B
+3 -> C
+1 -> A
+
+Add 4:
+
+3 -> C
+1 -> A
+4 -> D
+
+2 -> B  removed
+```
+
+### Important interview point
+
+`LinkedHashMap` itself is **not thread-safe**.
+
+So for a multi-threaded application, you need synchronization or another concurrency strategy.
+
+---
+
+# 10. How do you prevent memory leaks?
+
+This is an important follow-up.
+
+A cache can consume more and more memory if we continuously add entries.
+
+For example:
+
+```text
+Request 1 ---> user1
+Request 2 ---> user2
+Request 3 ---> user3
+...
+Request 1M --> user1M
+
+        |
+        v
+
+     CACHE
+       |
+       v
+   Memory grows
+```
+
+I would use one or more of these strategies:
+
+### 1. Maximum size
+
+```text
+Maximum entries = 10,000
+```
+
+Once the limit is reached, remove old entries.
+
+### 2. TTL
+
+Automatically expire entries after a specific duration.
+
+```text
+TTL = 10 minutes
+```
+
+### 3. LRU eviction
+
+Remove the least recently used entries.
+
+### 4. Scheduled cleanup
+
+Periodically scan and remove expired entries.
+
+### 5. Avoid caching unnecessarily large objects
+
+For example, don't cache huge response objects if only a small subset is required.
+
+---
+
+# 11. How do you handle Cache Stampede?
+
+This is one of the **best follow-up questions** to prepare for.
+
+Suppose the cache entry expires.
+
+100 requests arrive simultaneously:
+
+```text
+             Cache MISS
+                 |
+      +----------+----------+
+      |          |          |
+     R1         R2         R3
+      |          |          |
+      +----------+----------+
+                 |
+                 v
+             Database
+```
+
+All 100 requests may query the database.
+
+That is called a **cache stampede / thundering herd problem**.
+
+---
+
+# 12. Preventing Cache Stampede Using `computeIfAbsent`
+
+For simple cases, we can use:
+
+```java
+ConcurrentHashMap<String, User> cache =
+        new ConcurrentHashMap<>();
+
+public User getUser(String id) {
+
+    return cache.computeIfAbsent(
+            id,
+            this::loadFromDatabase
+    );
+}
+```
+
+Database method:
+
+```java
+private User loadFromDatabase(String id) {
+
+    System.out.println("Loading from DB: " + id);
+
+    return userRepository.findById(id);
+}
+```
+
+Conceptually:
+
+```text
+             100 Requests
+                   |
+                   v
+            Cache Missing
+                   |
+                   v
+          computeIfAbsent()
+                   |
+                   v
+          One computation
+                   |
+                   v
+              Database
+                   |
+                   v
+              Cache
+             /  |  \
+           R1  R2  R3 ...
+```
+
+**Important:** `computeIfAbsent` helps coordinate computation for the same key, but you should still think carefully about expensive/blocking loaders, failures, recursion, and broader system-level stampede behavior.
+
+---
+
+# 13. A Stronger Production-Style Approach
+
+For a more sophisticated cache, I'd use a structure like:
+
+```java
+class CacheEntry<V> {
+
+    V value;
+    long expiryTime;
+}
+```
+
+and:
+
+```java
+ConcurrentHashMap<K, CacheEntry<V>>
+```
+
+with:
+
+* Maximum capacity
+* TTL
+* Lazy expiration
+* Scheduled cleanup
+* Thread-safe access
+* Cache stampede protection
+* Monitoring/metrics
+
+Architecture:
+
+```text
+                     Application
+                          |
+                          v
+                  +---------------+
+                  |  Cache Layer  |
+                  +-------+-------+
+                          |
+              +-----------+-----------+
+              |                       |
+           CACHE HIT              CACHE MISS
+              |                       |
+              v                       v
+           Return                 Load Data
+                                      |
+                                      v
+                                  Database
+                                      |
+                                      v
+                              Update Cache
+                                      |
+                                      v
+                                   Return
+```
+
+---
+
+# 14. Interview Answer — 60 Seconds
+
+If the interviewer asks:
+
+> **"How would you implement a cache mechanism using Core Java?"**
+
+You can answer:
+
+> "I would start with a `ConcurrentHashMap` because the cache needs to be thread-safe and support concurrent access. I would store a cache entry containing both the value and its expiry timestamp to implement TTL. On a `get`, I check whether the entry exists and whether it has expired. If expired, I remove it and load the value from the database. To prevent unbounded memory growth, I would combine TTL with a maximum cache size and use LRU eviction if required. For proactive cleanup, I can use `ScheduledExecutorService` to remove expired entries. For cache stampede, I would coordinate concurrent loading for the same key, for example using `computeIfAbsent` or a per-key locking strategy. For an LRU requirement, `LinkedHashMap` with access-order can be used, with synchronization if the cache is accessed concurrently."
+
+---
+
+# 15. Quick Comparison for Interview
+
+| Approach                           | Thread Safe    | TTL    | LRU      | Best Use                         |
+| ---------------------------------- | -------------- | ------ | -------- | -------------------------------- |
+| `HashMap`                          | ❌              | Manual | ❌        | Simple/single-threaded           |
+| `synchronized HashMap`             | ✅              | Manual | Possible | Simple concurrent cache          |
+| `ConcurrentHashMap`                | ✅              | Manual | ❌        | General-purpose concurrent cache |
+| `LinkedHashMap`                    | ❌              | Manual | ✅        | LRU cache                        |
+| `ConcurrentHashMap` + TTL          | ✅              | ✅      | ❌        | Expiring cache                   |
+| `ScheduledExecutorService`         | Depends on map | ✅      | ❌        | Proactive expiry                 |
+| `ConcurrentHashMap` + LRU strategy | ✅*             | ✅*     | ✅*       | More advanced custom cache       |
+
+* Requires careful implementation; `ConcurrentHashMap` does not provide LRU eviction by itself.
+
+### The key thing to remember
+
+For an interview, structure your answer around **5 concepts**:
+
+**`ConcurrentHashMap` → Thread Safety → TTL → Eviction/LRU → Cache Stampede**
+
+That gives you a very strong progression from a **basic Core Java cache** to a **production-oriented design**.
