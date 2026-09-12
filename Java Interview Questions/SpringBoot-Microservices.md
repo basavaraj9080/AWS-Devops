@@ -1772,3 +1772,1401 @@ Say:
 > "`@Qualifier` is used when multiple beans match the required type. During dependency resolution, Spring first identifies type-compatible candidates and then uses qualifier metadata to narrow the candidates. I use it when I need explicit selection, whereas I use `@Primary` when one implementation should be the default."
 
 That sounds considerably more like a **senior Java/Spring engineer** than a textbook answer.
+
+
+---
+---
+
+Absolutely. For a **9-year Java/Spring profile**, I’d explain these with a little more depth than a basic definition, but keep the language simple enough to deliver naturally in an interview.
+
+# 6. Spring MVC / REST — Interview Ready Answers
+
+---
+
+# 1. Difference between `@Controller` and `@RestController`
+
+### `@Controller`
+
+Used mainly for **MVC applications where the response is a view/page**.
+
+```java
+@Controller
+public class OrderController {
+
+    @GetMapping("/orders")
+    public String orders() {
+        return "orders";
+    }
+}
+```
+
+Here `"orders"` can represent a view such as:
+
+```text
+orders.html
+```
+
+---
+
+### `@RestController`
+
+Used for **REST APIs**, where methods generally return data such as JSON/XML.
+
+```java
+@RestController
+public class OrderController {
+
+    @GetMapping("/orders")
+    public List<Order> getOrders() {
+        return orderService.getOrders();
+    }
+}
+```
+
+Response:
+
+```json
+[
+  {
+    "id": 101,
+    "status": "CREATED"
+  }
+]
+```
+
+### Internal relationship
+
+```text
+@Controller
+    |
+    +---- @ResponseBody on individual methods
+```
+
+Whereas:
+
+```text
+@RestController
+    |
+    +---- @Controller
+    |
+    +---- @ResponseBody
+```
+
+### Interview answer
+
+> "`@Controller` is primarily used for Spring MVC views, while `@RestController` is used for REST APIs and effectively combines `@Controller` with `@ResponseBody`."
+
+---
+
+# 2. What happens when `@RestController` is used at class level?
+
+Consider:
+
+```java
+@RestController
+public class OrderController {
+
+    @GetMapping("/orders")
+    public Order getOrder() {
+        return new Order(101, "CREATED");
+    }
+}
+```
+
+Because `@RestController` includes `@ResponseBody`, Spring treats the return value of each handler method as the **response body**, rather than as a view name.
+
+The flow is roughly:
+
+```text
+HTTP Request
+     |
+     v
+DispatcherServlet
+     |
+     v
+OrderController
+     |
+     v
+getOrder()
+     |
+     v
+Order Java Object
+     |
+     v
+HttpMessageConverter
+     |
+     v
+JSON
+     |
+     v
+HTTP Response
+```
+
+For JSON, Spring commonly uses Jackson through an `HttpMessageConverter`.
+
+Example:
+
+```java
+return new Order(101, "CREATED");
+```
+
+becomes:
+
+```json
+{
+  "id": 101,
+  "status": "CREATED"
+}
+```
+
+### Interview answer
+
+> "`@RestController` applies `@ResponseBody` semantics to all handler methods in the class, so their return values are written directly to the HTTP response body and typically serialized to JSON."
+
+---
+
+# 3. What is `@RequestMapping`?
+
+`@RequestMapping` is used to **map HTTP requests to controller classes or methods**.
+
+Example:
+
+```java
+@RestController
+@RequestMapping("/api/orders")
+public class OrderController {
+
+    @RequestMapping("/123")
+    public Order getOrder() {
+        ...
+    }
+}
+```
+
+The endpoint becomes:
+
+```text
+/api/orders/123
+```
+
+You can specify:
+
+```java
+@RequestMapping(
+    value = "/orders",
+    method = RequestMethod.GET
+)
+```
+
+It supports:
+
+* URL/path
+* HTTP method
+* headers
+* query parameters
+* content type
+* accepted response type
+
+### Class + method mapping
+
+```java
+@RequestMapping("/orders")
+public class OrderController {
+
+    @RequestMapping(
+        value = "/{id}",
+        method = RequestMethod.GET
+    )
+    public Order getOrder(@PathVariable Long id) {
+        ...
+    }
+}
+```
+
+Flow:
+
+```text
+GET /orders/101
+       |
+       v
+Class mapping: /orders
+       +
+Method mapping: /{id}
+       |
+       v
+getOrder(101)
+```
+
+### Interview answer
+
+> "`@RequestMapping` maps incoming HTTP requests to controller classes or methods based on path and other request conditions. The specialized annotations like `@GetMapping` are more concise forms for specific HTTP methods."
+
+---
+
+# 4. Difference between `@GetMapping`, `@PostMapping`, `@PutMapping`, and `@DeleteMapping`
+
+These are specialized versions of `@RequestMapping`.
+
+| Annotation       | HTTP Method | Typical purpose |
+| ---------------- | ----------- | --------------- |
+| `@GetMapping`    | GET         | Read            |
+| `@PostMapping`   | POST        | Create/process  |
+| `@PutMapping`    | PUT         | Replace/update  |
+| `@DeleteMapping` | DELETE      | Delete          |
+
+Example:
+
+```java
+@GetMapping("/orders/{id}")
+public Order getOrder(@PathVariable Long id) {
+    ...
+}
+```
+
+```java
+@PostMapping("/orders")
+public Order createOrder(@RequestBody OrderRequest request) {
+    ...
+}
+```
+
+```java
+@PutMapping("/orders/{id}")
+public Order updateOrder(
+        @PathVariable Long id,
+        @RequestBody OrderRequest request) {
+    ...
+}
+```
+
+```java
+@DeleteMapping("/orders/{id}")
+public void deleteOrder(@PathVariable Long id) {
+    ...
+}
+```
+
+### REST flow
+
+```text
+GET       → Read
+POST      → Create/process
+PUT       → Replace
+PATCH     → Partial update
+DELETE    → Remove
+```
+
+---
+
+# 5. Difference between PUT and PATCH
+
+This is a **very common interview question**.
+
+### PUT
+
+Generally represents **replacement of the resource's representation**.
+
+Suppose current resource is:
+
+```json
+{
+  "id": 101,
+  "name": "John",
+  "email": "john@test.com",
+  "status": "ACTIVE"
+}
+```
+
+A PUT request might send:
+
+```http
+PUT /users/101
+```
+
+```json
+{
+  "name": "John",
+  "email": "new@test.com",
+  "status": "ACTIVE"
+}
+```
+
+Conceptually:
+
+```text
+PUT
+ |
+ +---- Replace/update complete representation
+```
+
+---
+
+### PATCH
+
+Used for a **partial modification**.
+
+```http
+PATCH /users/101
+```
+
+```json
+{
+  "email": "new@test.com"
+}
+```
+
+Only email needs to change.
+
+```text
+PATCH
+ |
+ +---- Modify selected fields
+```
+
+### Interview answer
+
+> "`PUT` generally represents replacement of the resource representation and is idempotent. `PATCH` is intended for partial modifications and is not inherently required to be idempotent, although a particular PATCH operation can be designed to be idempotent."
+
+### Important nuance
+
+Don't say:
+
+> "PATCH is always non-idempotent."
+
+That's incorrect.
+
+A PATCH operation **can be idempotent depending on how it is designed**.
+
+---
+
+# 6. Difference between PUT and POST
+
+### POST
+
+POST is generally used to:
+
+* create a new resource under a collection
+* trigger processing/action where POST semantics are appropriate
+* submit data
+
+Example:
+
+```http
+POST /orders
+```
+
+```json
+{
+  "productId": 1001,
+  "quantity": 2
+}
+```
+
+Server may generate:
+
+```text
+Order ID = 501
+```
+
+---
+
+### PUT
+
+PUT usually targets a **specific resource URI**.
+
+```http
+PUT /orders/501
+```
+
+The client knows the resource URI.
+
+### Key difference
+
+```text
+POST /orders
+       |
+       v
+Server typically determines new resource URI/ID
+
+PUT /orders/501
+       |
+       v
+Client specifies target URI
+```
+
+### Idempotency
+
+POST:
+
+```text
+POST /orders
+POST /orders
+POST /orders
+```
+
+could create:
+
+```text
+Order 501
+Order 502
+Order 503
+```
+
+PUT:
+
+```text
+PUT /orders/501
+PUT /orders/501
+PUT /orders/501
+```
+
+can leave resource 501 in the same final state.
+
+### Interview answer
+
+> "POST is generally used for creating resources or processing a request where the server controls the resulting resource, while PUT targets a known URI and represents replacement of that resource. PUT is idempotent by HTTP semantics; POST is not."
+
+---
+
+# 7. Can we perform an insert operation using PUT?
+
+### Yes.
+
+This is a slightly tricky question.
+
+PUT can be used to create a resource **if the client knows and specifies the resource URI**, and the server supports that semantics.
+
+Example:
+
+```http
+PUT /users/101
+```
+
+```json
+{
+  "name": "John",
+  "email": "john@test.com"
+}
+```
+
+If user `101` doesn't exist, the server could create it.
+
+Conceptually:
+
+```text
+PUT /users/101
+       |
+       +---- Exists?
+       |       |
+       |      YES → Replace
+       |       |
+       |      NO
+       |       ↓
+       |     Create
+```
+
+### Why is this different from POST?
+
+Because the client knows:
+
+```text
+PUT /users/101
+```
+
+and can repeat the same request safely.
+
+### Interview answer
+
+> "Yes. PUT can create a resource when the client specifies the resource URI and the API defines PUT that way. The important point is not whether the database operation is technically INSERT; it's the HTTP semantics and idempotency of the API."
+
+That's a **strong senior-level answer**.
+
+---
+
+# 8. What is idempotency in REST?
+
+An operation is **idempotent if making the same request multiple times has the same intended effect on the server as making it once**.
+
+Mathematically:
+
+```text
+f(f(x)) = f(x)
+```
+
+### Example
+
+```http
+PUT /users/101
+```
+
+```json
+{
+  "name": "John",
+  "status": "ACTIVE"
+}
+```
+
+Send it once:
+
+```text
+User 101 → ACTIVE
+```
+
+Send it again:
+
+```text
+User 101 → ACTIVE
+```
+
+Send it 10 times:
+
+```text
+User 101 → ACTIVE
+```
+
+Final state is the same.
+
+### HTTP idempotent methods
+
+Generally:
+
+```text
+GET       → Idempotent
+PUT       → Idempotent
+DELETE    → Idempotent
+HEAD      → Idempotent
+OPTIONS   → Idempotent
+```
+
+POST is **not inherently idempotent**.
+
+### Important nuance
+
+Idempotent does **not** mean:
+
+> "The response must always be identical."
+
+It means the **intended server-side effect** is the same.
+
+For example, two DELETE requests might return:
+
+```text
+First → 204 No Content
+Second → 404 Not Found
+```
+
+The operation can still be considered idempotent because the resource remains deleted.
+
+---
+
+# 9. Give a real-time example of an idempotent REST API
+
+A good real-world example is:
+
+```http
+PUT /customers/123/address
+```
+
+```json
+{
+  "city": "Bengaluru",
+  "pincode": "560001"
+}
+```
+
+If the same request is retried because of a network timeout:
+
+```text
+Client
+  |
+  | PUT
+  v
+API
+  |
+  X Network timeout
+  |
+  | retry
+  v
+API
+```
+
+The address still becomes:
+
+```text
+Bengaluru / 560001
+```
+
+There isn't a second address created.
+
+### Excellent real-world example: payment APIs
+
+For **payments**, blindly relying on POST is dangerous because a network timeout could result in duplicate payments.
+
+A common design is to use an **idempotency key**:
+
+```http
+POST /payments
+Idempotency-Key: 8f7c-1234
+```
+
+Request:
+
+```json
+{
+  "amount": 1000,
+  "currency": "INR"
+}
+```
+
+Retry with the same key:
+
+```text
+Request 1 ──→ Payment Service
+Request 2 ──→ Payment Service
+Request 3 ──→ Payment Service
+                   |
+                   v
+            Same Idempotency Key
+                   |
+                   v
+            Same payment result
+```
+
+The server stores the key/result and prevents duplicate processing.
+
+### Interview answer
+
+> "For payment APIs, I commonly use an idempotency key because clients may retry after a timeout. The same key ensures the same logical payment isn't processed multiple times."
+
+---
+
+# 10. How do you handle exceptions globally in Spring Boot?
+
+Use:
+
+```java
+@RestControllerAdvice
+```
+
+or:
+
+```java
+@ControllerAdvice
+```
+
+with `@ExceptionHandler`.
+
+For REST APIs, I commonly use `@RestControllerAdvice`.
+
+Example:
+
+```java
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(OrderNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleOrderNotFound(
+            OrderNotFoundException ex) {
+
+        ErrorResponse error =
+                new ErrorResponse("ORDER_NOT_FOUND", ex.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(error);
+    }
+}
+```
+
+Controller:
+
+```java
+@GetMapping("/orders/{id}")
+public Order getOrder(@PathVariable Long id) {
+
+    return orderService.findById(id)
+            .orElseThrow(() ->
+                new OrderNotFoundException("Order not found"));
+}
+```
+
+Instead of putting:
+
+```java
+try {
+   ...
+} catch (...) {
+   ...
+}
+```
+
+inside every controller, exceptions are centralized.
+
+### Architecture
+
+```text
+              HTTP Request
+                   |
+                   v
+              Controller
+                   |
+                   v
+               Service
+                   |
+                   X
+             Exception
+                   |
+                   v
+        @RestControllerAdvice
+                   |
+                   v
+             ErrorResponse
+```
+
+---
+
+# 11. How does `@ControllerAdvice` work?
+
+`@ControllerAdvice` allows us to define **cross-cutting controller logic globally**.
+
+Most commonly:
+
+```java
+@ControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<?> handle(Exception ex) {
+        ...
+    }
+}
+```
+
+Spring's MVC infrastructure detects the exception and looks for a matching `@ExceptionHandler`.
+
+Conceptually:
+
+```text
+Controller
+    |
+    X Exception
+    |
+    v
+DispatcherServlet
+    |
+    v
+Exception resolution
+    |
+    v
+@ControllerAdvice
+    |
+    v
+@ExceptionHandler
+    |
+    v
+HTTP Response
+```
+
+### `@RestControllerAdvice`
+
+This is effectively:
+
+```text
+@ControllerAdvice
++
+@ResponseBody
+```
+
+So it's especially convenient for REST APIs.
+
+### Senior-level point
+
+You can define handlers for:
+
+```text
+Specific business exception
+        ↓
+Validation exception
+        ↓
+Authentication/authorization exception
+        ↓
+Generic unexpected exception
+```
+
+And return a consistent error format.
+
+For example:
+
+```json
+{
+  "timestamp": "2026-09-10T10:20:30Z",
+  "status": 404,
+  "code": "ORDER_NOT_FOUND",
+  "message": "Order 101 not found",
+  "path": "/orders/101"
+}
+```
+
+For newer Spring applications, you can also consider Spring's `ProblemDetail` support for standardized HTTP API error responses.
+
+---
+
+# 12. How do you implement validation in REST APIs?
+
+Use Jakarta Bean Validation.
+
+Example request:
+
+```java
+public class CreateUserRequest {
+
+    @NotBlank
+    private String name;
+
+    @Email
+    @NotBlank
+    private String email;
+
+    @Min(18)
+    private int age;
+}
+```
+
+Controller:
+
+```java
+@PostMapping("/users")
+public ResponseEntity<?> createUser(
+        @Valid @RequestBody CreateUserRequest request) {
+
+    return ResponseEntity.ok(userService.create(request));
+}
+```
+
+### Flow
+
+```text
+JSON Request
+     |
+     v
+Jackson deserialization
+     |
+     v
+CreateUserRequest
+     |
+     v
+@Valid
+     |
+     v
+Bean Validation
+     |
+     +---- Valid ------> Controller
+     |
+     +---- Invalid ----> Validation Exception
+```
+
+For example:
+
+```json
+{
+  "name": "",
+  "email": "abc",
+  "age": 15
+}
+```
+
+Validation can produce errors such as:
+
+```text
+name → must not be blank
+email → must be a valid email
+age → must be >= 18
+```
+
+### Common annotations
+
+```text
+@NotNull
+@NotBlank
+@NotEmpty
+@Size
+@Min
+@Max
+@Positive
+@Email
+@Pattern
+```
+
+### Important distinction
+
+`@Valid` triggers validation.
+
+`@Validated` is useful especially for **validation groups and method-level validation**.
+
+### Interview answer
+
+> "For request-body validation, I typically use Jakarta Bean Validation annotations on DTOs and `@Valid` on `@RequestBody`. I handle validation failures centrally through `@RestControllerAdvice`."
+
+---
+
+# 13. How do you secure REST APIs?
+
+A typical Spring Boot REST API uses **Spring Security**.
+
+For JWT-based authentication:
+
+```text
+Client
+   |
+   | Authorization: Bearer JWT
+   v
+Spring Security Filter Chain
+   |
+   +---- Validate JWT
+   |
+   +---- Extract user/authorities
+   |
+   +---- Authorization
+   |
+   v
+Controller
+```
+
+Example configuration:
+
+```java
+@Bean
+SecurityFilterChain securityFilterChain(HttpSecurity http)
+        throws Exception {
+
+    http
+        .csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/public/**").permitAll()
+            .requestMatchers("/admin/**")
+                .hasRole("ADMIN")
+            .anyRequest()
+                .authenticated()
+        )
+        .oauth2ResourceServer(oauth2 ->
+            oauth2.jwt(Customizer.withDefaults()));
+
+    return http.build();
+}
+```
+
+### Typical security layers
+
+```text
+HTTPS
+  ↓
+Authentication
+  ↓
+Authorization
+  ↓
+Input validation
+  ↓
+Business authorization
+  ↓
+Audit/logging
+```
+
+### Authentication
+
+```text
+Who are you?
+```
+
+### Authorization
+
+```text
+What are you allowed to do?
+```
+
+For example:
+
+```text
+USER
+ └── GET /orders       ✓
+
+USER
+ └── DELETE /orders/10 ✗
+
+ADMIN
+ └── DELETE /orders/10 ✓
+```
+
+### Other important REST security practices
+
+* HTTPS everywhere
+* JWT/OAuth2 where appropriate
+* Short-lived access tokens
+* Secure token handling
+* Role/authority-based authorization
+* Input validation
+* Rate limiting where appropriate
+* Avoid sensitive information in logs
+* CORS configuration based on actual requirements
+* CSRF considerations based on authentication mechanism
+* Proper security headers
+
+### Senior-level point
+
+Don't say:
+
+> "JWT makes the API secure."
+
+Better:
+
+> "JWT is an authentication/token mechanism. The overall API security still depends on TLS, token validation, authorization, secure configuration, input validation and other controls."
+
+---
+
+# 14. Difference between HTTP and HTTPS
+
+### HTTP
+
+HTTP sends application data without transport encryption.
+
+```text
+Client
+   |
+   | HTTP
+   | plaintext
+   v
+Server
+```
+
+Someone able to observe the network path may potentially read or modify the traffic.
+
+---
+
+### HTTPS
+
+HTTPS is essentially:
+
+```text
+HTTP + TLS
+```
+
+```text
+Client
+   |
+   | HTTPS
+   | encrypted
+   v
+Server
+```
+
+Example:
+
+```text
+HTTP
+http://example.com
+
+HTTPS
+https://example.com
+```
+
+### Comparison
+
+| HTTP                               | HTTPS                                              |
+| ---------------------------------- | -------------------------------------------------- |
+| No TLS encryption                  | Uses TLS                                           |
+| Data can be exposed on network     | Data is encrypted in transit                       |
+| No server authentication from TLS  | Server authenticated using certificate             |
+| Vulnerable to network interception | Protects against many network interception attacks |
+
+### Important point
+
+HTTPS protects **data in transit**.
+
+It doesn't automatically protect:
+
+```text
+Database
+Application vulnerabilities
+Compromised server
+Bad authorization
+Malicious business logic
+```
+
+---
+
+# 15. How does HTTPS provide security?
+
+This is where interviewers may go deeper.
+
+HTTPS uses **TLS — Transport Layer Security**.
+
+It provides three major security properties:
+
+```text
+HTTPS / TLS
+    |
+    +---- Confidentiality
+    |
+    +---- Integrity
+    |
+    +---- Authentication
+```
+
+---
+
+## Step 1 — Client connects
+
+```text
+Client
+   |
+   | ClientHello
+   v
+Server
+```
+
+Client and server negotiate TLS parameters.
+
+---
+
+## Step 2 — Server provides certificate
+
+```text
+Server
+   |
+   | Certificate
+   v
+Client
+```
+
+The certificate contains information binding the server's identity to a public key and is signed by a trusted Certificate Authority (CA).
+
+Client validates things such as:
+
+```text
+Certificate valid?
+       |
+       +---- Trusted CA?
+       |
+       +---- Correct hostname?
+       |
+       +---- Within validity period?
+       |
+       +---- Not otherwise rejected?
+```
+
+---
+
+## Step 3 — Establish cryptographic keys
+
+Modern TLS uses asymmetric cryptography during the handshake to authenticate the server and establish shared session keys.
+
+Then:
+
+```text
+Client                  Server
+  |                       |
+  |==== Encrypted =======>|
+  |<=== Encrypted ========|
+  |                       |
+```
+
+Bulk application data is protected using efficient symmetric cryptography.
+
+---
+
+## Step 4 — Encrypted communication
+
+Suppose the client sends:
+
+```text
+password=abc123
+```
+
+Over HTTPS, the network does not see the plaintext application data; it sees encrypted TLS records.
+
+Conceptually:
+
+```text
+Original Data
+     |
+     v
+TLS Encryption
+     |
+     v
+Encrypted Data
+     |
+     v
+     Network
+     |
+     v
+TLS Decryption
+     |
+     v
+Original Data
+```
+
+---
+
+# ⭐ How to explain HTTPS in 30 seconds
+
+This is the answer I'd recommend memorizing:
+
+> "HTTPS is HTTP running over TLS. During the TLS handshake, the server presents a certificate that allows the client to authenticate the server. The handshake establishes cryptographic session keys, and then application data is encrypted and integrity-protected. So HTTPS provides confidentiality and integrity for data in transit and server authentication."
+
+That's a very strong answer for a senior Java interview.
+
+---
+
+# ⭐ Complete REST Request Flow — Memorize This
+
+If an interviewer asks:
+
+**"Explain what happens when a REST request comes into a Spring Boot application."**
+
+Use this diagram:
+
+```text
+                    Client
+                      |
+                      | HTTPS
+                      v
+              Load Balancer / Gateway
+                      |
+                      v
+            Spring Security Filters
+                      |
+                      v
+               DispatcherServlet
+                      |
+                      v
+              Handler Mapping
+                      |
+                      v
+                Controller
+                      |
+                      v
+                 Service
+                      |
+                      v
+               Repository
+                      |
+                      v
+                  Database
+                      |
+                      v
+               Repository
+                      |
+                      v
+                  Service
+                      |
+                      v
+                Controller
+                      |
+                      v
+             HttpMessageConverter
+                      |
+                      v
+                  JSON
+                      |
+                      v
+                   Client
+```
+
+And if something fails:
+
+```text
+Controller / Service / Repository
+              |
+              X
+          Exception
+              |
+              v
+     @RestControllerAdvice
+              |
+              v
+       ErrorResponse
+```
+
+---
+
+# ⭐ One More Important Interview Topic: REST Status Codes
+
+You will very likely get asked this alongside these questions.
+
+### 2xx — Success
+
+```text
+200 OK
+201 Created
+202 Accepted
+204 No Content
+```
+
+Typical examples:
+
+```text
+GET      → 200
+POST     → 201
+DELETE   → 204
+```
+
+### 4xx — Client/request problem
+
+```text
+400 Bad Request
+401 Unauthorized
+403 Forbidden
+404 Not Found
+409 Conflict
+422 Unprocessable Content
+```
+
+Remember the common distinction:
+
+```text
+401 → Authentication is missing/invalid
+403 → Authentication may exist, but access is forbidden
+```
+
+### 5xx — Server-side problem
+
+```text
+500 Internal Server Error
+502 Bad Gateway
+503 Service Unavailable
+504 Gateway Timeout
+```
+
+---
+
+# 🎯 Final Rapid-Fire Revision
+
+| Question                           | Interview answer                                                            |
+| ---------------------------------- | --------------------------------------------------------------------------- |
+| `@Controller` vs `@RestController` | View-oriented MVC vs REST response body                                     |
+| `@RestController` internally       | `@Controller` + `@ResponseBody`                                             |
+| `@RequestMapping`                  | Maps HTTP requests to handlers                                              |
+| `@GetMapping`                      | GET                                                                         |
+| `@PostMapping`                     | POST                                                                        |
+| `@PutMapping`                      | PUT                                                                         |
+| `@DeleteMapping`                   | DELETE                                                                      |
+| PUT vs PATCH                       | Full replacement vs partial modification                                    |
+| PUT vs POST                        | Known target URI/idempotent vs generally server-controlled creation/process |
+| Can PUT insert?                    | Yes, if API semantics allow client-defined resource URI                     |
+| Idempotency                        | Repeating same request has same intended server-side effect                 |
+| Idempotent methods                 | GET, HEAD, PUT, DELETE, OPTIONS                                             |
+| Global exceptions                  | `@RestControllerAdvice` + `@ExceptionHandler`                               |
+| `@ControllerAdvice`                | Global controller exception/cross-cutting handling                          |
+| Validation                         | DTO + Bean Validation + `@Valid`                                            |
+| REST security                      | Spring Security + TLS + authentication + authorization                      |
+| HTTP vs HTTPS                      | HTTP vs HTTP over TLS                                                       |
+| HTTPS security                     | Authentication + encryption + integrity via TLS                             |
+
+## 🔥 The 7 senior-level points worth memorizing
+
+1. **`@RestController = @Controller + @ResponseBody`.**
+2. **PUT is idempotent by HTTP semantics; PATCH can be idempotent depending on implementation.**
+3. **Idempotency means same intended server-side effect—not necessarily identical response.**
+4. **PUT can create a resource if the client specifies the URI and the API defines that behavior.**
+5. **Use `@RestControllerAdvice` for centralized REST exception handling.**
+6. **Use DTO + `@Valid` rather than exposing persistence entities directly as API contracts.**
+7. **HTTPS = HTTP over TLS; TLS provides confidentiality, integrity, and server authentication.**
