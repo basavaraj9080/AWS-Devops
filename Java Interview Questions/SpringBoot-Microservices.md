@@ -3170,3 +3170,2083 @@ Remember the common distinction:
 5. **Use `@RestControllerAdvice` for centralized REST exception handling.**
 6. **Use DTO + `@Valid` rather than exposing persistence entities directly as API contracts.**
 7. **HTTPS = HTTP over TLS; TLS provides confidentiality, integrity, and server authentication.**
+
+
+---
+---
+
+# 7. Transactions / Hibernate / JPA
+
+The examples below use **Spring Boot, Spring Data JPA, Hibernate, and Java**. The explanations are designed to be easy to present in an interview while still showing 9 years of practical experience.
+
+---
+
+# 1. What is a transaction?
+
+A **transaction** is a group of database operations treated as a single logical unit.
+
+The transaction follows this rule:
+
+> Either all operations succeed and are committed, or the operations are rolled back.
+
+## Real-time example: Money transfer
+
+Suppose we transfer ₹1,000 from Account A to Account B.
+
+```text
+1. Debit ₹1,000 from Account A
+2. Credit ₹1,000 to Account B
+```
+
+Both operations must succeed together.
+
+```text
+                 Transaction Starts
+                         |
+                         v
+              Debit Account A
+                         |
+                         v
+              Credit Account B
+                         |
+                         v
+                      COMMIT
+```
+
+If crediting Account B fails:
+
+```text
+                 Transaction Starts
+                         |
+                         v
+              Debit Account A
+                         |
+                         v
+              Credit Account B
+                         |
+                         v
+                       FAILED
+                         |
+                         v
+                      ROLLBACK
+                         |
+                         v
+             Debit from Account A undone
+```
+
+## Spring Boot example
+
+```java
+@Service
+public class TransferService {
+
+    private final AccountRepository accountRepository;
+
+    public TransferService(AccountRepository accountRepository) {
+        this.accountRepository = accountRepository;
+    }
+
+    @Transactional
+    public void transferMoney(
+            Long fromAccountId,
+            Long toAccountId,
+            BigDecimal amount) {
+
+        accountRepository.debit(fromAccountId, amount);
+
+        accountRepository.credit(toAccountId, amount);
+    }
+}
+```
+
+`@Transactional` tells Spring to execute the method within a transaction.
+
+### Interview answer
+
+> A transaction is a logical unit of work containing one or more database operations. It ensures that the operations are committed together or rolled back together. In Spring, we commonly use `@Transactional` to manage transactions declaratively.
+
+---
+
+# 2. Explain ACID properties
+
+ACID represents the four important properties of a transaction:
+
+```text
+A - Atomicity
+C - Consistency
+I - Isolation
+D - Durability
+```
+
+| Property    | Meaning                                              |
+| ----------- | ---------------------------------------------------- |
+| Atomicity   | All operations succeed or all are rolled back        |
+| Consistency | Data remains valid before and after the transaction  |
+| Isolation   | Concurrent transactions do not interfere incorrectly |
+| Durability  | Committed data survives failures                     |
+
+---
+
+## A — Atomicity
+
+Atomicity means:
+
+> A transaction is treated as one indivisible operation.
+
+Example:
+
+```text
+Debit Account A
+Credit Account B
+```
+
+If crediting Account B fails, the debit operation is also rolled back.
+
+```text
+Debit A + Credit B
+        |
+        +---- Both succeed  -> COMMIT
+        |
+        +---- One fails     -> ROLLBACK
+```
+
+---
+
+## C — Consistency
+
+Consistency means:
+
+> A transaction must move the database from one valid state to another valid state.
+
+Example:
+
+```text
+Before transfer:
+
+Account A = ₹5,000
+Account B = ₹3,000
+Total     = ₹8,000
+```
+
+After transferring ₹1,000:
+
+```text
+Account A = ₹4,000
+Account B = ₹4,000
+Total     = ₹8,000
+```
+
+The total balance remains consistent.
+
+Consistency is maintained through:
+
+* Database constraints
+* Foreign keys
+* Unique constraints
+* Not-null constraints
+* Application business rules
+* Transaction logic
+
+---
+
+## I — Isolation
+
+Isolation means:
+
+> One transaction should not improperly see the intermediate changes of another transaction.
+
+Example:
+
+```text
+Transaction T1: Updating account balance
+Transaction T2: Reading account balance
+```
+
+Isolation determines what T2 is allowed to see while T1 is still running.
+
+Common isolation levels:
+
+| Isolation level    | General behavior                                     |
+| ------------------ | ---------------------------------------------------- |
+| `READ_UNCOMMITTED` | Dirty reads are possible                             |
+| `READ_COMMITTED`   | Only committed data can be read                      |
+| `REPEATABLE_READ`  | Repeated reads generally return the same result      |
+| `SERIALIZABLE`     | Highest isolation; transactions behave more serially |
+
+In Spring:
+
+```java
+@Transactional(isolation = Isolation.READ_COMMITTED)
+public void processPayment() {
+    // Database operations
+}
+```
+
+The exact behavior depends on the database.
+
+---
+
+## D — Durability
+
+Durability means:
+
+> Once a transaction is committed, the data should survive application or database failure.
+
+```text
+Transaction COMMIT successful
+              |
+              v
+       Data persisted
+              |
+              v
+ Application restart
+              |
+              v
+       Data still exists
+```
+
+### Interview answer
+
+> ACID properties guarantee reliable transactions. Atomicity ensures all-or-nothing execution, consistency maintains valid data, isolation controls concurrent transaction visibility, and durability ensures committed data survives failures.
+
+---
+
+# 3. What is transaction propagation?
+
+Transaction propagation defines:
+
+> How a method should behave when it is called from another method that may already have a transaction.
+
+For example:
+
+```text
+Service A
+   |
+   v
+Service B
+```
+
+If Service A already has a transaction, should Service B:
+
+* Join the same transaction?
+* Start a new transaction?
+* Execute without a transaction?
+* Fail if no transaction exists?
+
+Spring provides propagation modes through the `@Transactional` annotation.
+
+```java
+@Transactional(propagation = Propagation.REQUIRED)
+public void processOrder() {
+}
+```
+
+## Common propagation types
+
+| Propagation     | Behavior                                                     |
+| --------------- | ------------------------------------------------------------ |
+| `REQUIRED`      | Join existing transaction or create a new one                |
+| `REQUIRES_NEW`  | Suspend existing transaction and create a new one            |
+| `SUPPORTS`      | Join existing transaction if available                       |
+| `MANDATORY`     | Existing transaction must be present                         |
+| `NOT_SUPPORTED` | Execute without a transaction                                |
+| `NEVER`         | Fail if a transaction exists                                 |
+| `NESTED`        | Execute using a nested transaction/savepoint where supported |
+
+The most important types for interviews are:
+
+```text
+REQUIRED
+REQUIRES_NEW
+```
+
+---
+
+# 4. Explain `Propagation.REQUIRED`
+
+`REQUIRED` is the **default Spring transaction propagation mode**.
+
+Its behavior is:
+
+```text
+If transaction exists:
+    Join the existing transaction
+
+If transaction does not exist:
+    Create a new transaction
+```
+
+```java
+@Transactional(propagation = Propagation.REQUIRED)
+public void saveOrder() {
+    // Database operations
+}
+```
+
+Because `REQUIRED` is the default, this is equivalent:
+
+```java
+@Transactional
+public void saveOrder() {
+}
+```
+
+## Example
+
+```java
+@Service
+public class OrderService {
+
+    private final PaymentService paymentService;
+    private final OrderRepository orderRepository;
+
+    public OrderService(
+            PaymentService paymentService,
+            OrderRepository orderRepository) {
+        this.paymentService = paymentService;
+        this.orderRepository = orderRepository;
+    }
+
+    @Transactional
+    public void placeOrder() {
+        orderRepository.save(new Order());
+
+        paymentService.savePayment();
+    }
+}
+```
+
+```java
+@Service
+public class PaymentService {
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void savePayment() {
+        // Save payment record
+    }
+}
+```
+
+## Transaction flow
+
+```text
+placeOrder()
+     |
+     | Starts Transaction T1
+     v
+Save Order
+     |
+     v
+savePayment()
+     |
+     | Joins existing Transaction T1
+     v
+Save Payment
+     |
+     v
+Commit T1
+```
+
+Both operations belong to the same transaction.
+
+If payment saving fails:
+
+```text
+Save Order
+     |
+     v
+Save Payment - FAILED
+     |
+     v
+Rollback T1
+     |
+     v
+Order and Payment changes are rolled back
+```
+
+### Important point
+
+With `REQUIRED`, inner methods do not normally create independent transactions.
+
+### Interview answer
+
+> `Propagation.REQUIRED` joins the current transaction if one exists. If no transaction exists, Spring creates a new one. It is the default propagation mode and is useful when multiple service operations must commit or roll back together.
+
+---
+
+# 5. Explain `Propagation.REQUIRES_NEW`
+
+`REQUIRES_NEW` means:
+
+> Always execute the method in a new, independent transaction.
+
+If an outer transaction already exists, Spring:
+
+1. Suspends the outer transaction.
+2. Starts a new transaction.
+3. Executes the inner method.
+4. Commits or rolls back the inner transaction.
+5. Resumes the outer transaction.
+
+```java
+@Transactional(propagation = Propagation.REQUIRES_NEW)
+public void saveAuditLog() {
+    // Independent transaction
+}
+```
+
+## Example
+
+```java
+@Service
+public class OrderService {
+
+    private final AuditService auditService;
+    private final OrderRepository orderRepository;
+
+    public OrderService(
+            AuditService auditService,
+            OrderRepository orderRepository) {
+        this.auditService = auditService;
+        this.orderRepository = orderRepository;
+    }
+
+    @Transactional
+    public void placeOrder() {
+        orderRepository.save(new Order());
+
+        auditService.saveAuditLog();
+
+        // Other order processing
+    }
+}
+```
+
+```java
+@Service
+public class AuditService {
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void saveAuditLog() {
+        // Save audit record independently
+    }
+}
+```
+
+## Flow
+
+```text
+placeOrder()
+     |
+     | Start Transaction T1
+     v
+Save Order
+     |
+     v
+Suspend T1
+     |
+     v
+Start Transaction T2
+     |
+     v
+Save Audit Log
+     |
+     v
+Commit T2
+     |
+     v
+Resume T1
+     |
+     v
+Continue placeOrder()
+     |
+     v
+Commit or Rollback T1
+```
+
+The audit log transaction is independent of the order transaction.
+
+## Common use cases
+
+`REQUIRES_NEW` is often used for:
+
+* Audit logging
+* Error logging
+* Independent status history
+* Retry tracking
+* Recording failure details
+* Saving an outbox record in a separate transaction, depending on the design
+
+### Important practical point
+
+The inner transaction usually needs separate transaction resources, such as another database connection. Therefore, excessive use of `REQUIRES_NEW` can increase connection-pool usage.
+
+---
+
+# 6. Difference between `REQUIRED` and `REQUIRES_NEW`
+
+| Feature                   | `REQUIRED`                       | `REQUIRES_NEW`                      |
+| ------------------------- | -------------------------------- | ----------------------------------- |
+| Existing transaction      | Joins it                         | Suspends it                         |
+| Creates a new transaction | Only if no transaction exists    | Always                              |
+| Transaction independence  | No                               | Yes                                 |
+| Rollback boundary         | Shared                           | Independent                         |
+| Typical use               | Order and payment together       | Independent audit record            |
+| Database resources        | Usually shares current resources | Usually requires separate resources |
+| Outer transaction         | Continues normally               | Suspended temporarily               |
+
+## Visual comparison
+
+### `REQUIRED`
+
+```text
+Outer method
+    |
+    v
+Transaction T1 starts
+    |
+    +---- Inner method joins T1
+    |
+    +---- Another method joins T1
+    |
+    v
+Commit or Rollback T1
+```
+
+### `REQUIRES_NEW`
+
+```text
+Outer method
+    |
+    v
+Transaction T1 starts
+    |
+    v
+Suspend T1
+    |
+    v
+Inner method starts T2
+    |
+    v
+Commit or Rollback T2
+    |
+    v
+Resume T1
+    |
+    v
+Commit or Rollback T1
+```
+
+### Easy interview statement
+
+> `REQUIRED` means “use the existing transaction if available.” `REQUIRES_NEW` means “always create a separate transaction and suspend the existing one temporarily.”
+
+---
+
+# 7. What happens if an inner `REQUIRES_NEW` transaction fails?
+
+The inner transaction and outer transaction have separate transaction boundaries.
+
+The result depends on whether the exception is handled.
+
+---
+
+## Case 1: Inner transaction fails and the exception is handled
+
+```java
+@Service
+public class OrderService {
+
+    @Transactional
+    public void placeOrder() {
+        orderRepository.save(new Order());
+
+        try {
+            auditService.saveAuditLog();
+        } catch (Exception exception) {
+            // Handle audit failure
+            System.out.println("Audit failed");
+        }
+
+        paymentRepository.save(new Payment());
+    }
+}
+```
+
+```java
+@Service
+public class AuditService {
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void saveAuditLog() {
+        throw new RuntimeException("Audit database error");
+    }
+}
+```
+
+## Flow
+
+```text
+Outer T1 starts
+     |
+     v
+Save Order
+     |
+     v
+Suspend T1
+     |
+     v
+Start inner T2
+     |
+     v
+Audit operation fails
+     |
+     v
+Rollback T2
+     |
+     v
+Exception handled by outer method
+     |
+     v
+Resume T1
+     |
+     v
+Save Payment
+     |
+     v
+Commit T1
+```
+
+Possible result:
+
+```text
+Order       -> Committed
+Audit Log   -> Rolled back
+Payment     -> Committed
+```
+
+---
+
+## Case 2: Inner exception is not handled
+
+```java
+@Transactional
+public void placeOrder() {
+    orderRepository.save(new Order());
+
+    auditService.saveAuditLog(); // Throws exception
+
+    paymentRepository.save(new Payment());
+}
+```
+
+Flow:
+
+```text
+T1 starts
+   |
+   v
+Suspend T1
+   |
+   v
+T2 starts
+   |
+   v
+T2 fails
+   |
+   v
+Rollback T2
+   |
+   v
+Exception propagates to T1
+   |
+   v
+T1 may also roll back
+```
+
+If the exception reaches the outer transaction and is an unchecked exception, Spring normally marks the outer transaction for rollback.
+
+### Important distinction
+
+`REQUIRES_NEW` separates transaction boundaries, but it does not automatically suppress exceptions.
+
+> The inner transaction may roll back independently, but if its exception propagates to the outer method, the outer transaction may also roll back.
+
+### Additional interview point
+
+If the outer transaction is suspended and the inner transaction fails, the outer transaction is resumed after the inner transaction completes or rolls back.
+
+---
+
+# 8. What is first-level cache in Hibernate?
+
+The **first-level cache** is the cache maintained by a Hibernate `Session` or JPA `EntityManager`.
+
+It is:
+
+* Enabled by default.
+* Associated with one persistence context.
+* Not shared between different sessions.
+* Used to store managed entities.
+
+## Example
+
+```java
+User user1 = entityManager.find(User.class, 1L);
+
+User user2 = entityManager.find(User.class, 1L);
+```
+
+Conceptually:
+
+```text
+First find:
+    |
+    v
+Check first-level cache
+    |
+    v
+Cache miss
+    |
+    v
+Execute database query
+    |
+    v
+Store User ID 1 in cache
+```
+
+Second find:
+
+```text
+Second find:
+    |
+    v
+Check first-level cache
+    |
+    v
+Cache hit
+    |
+    v
+Return managed User object
+```
+
+## Diagram
+
+```text
+EntityManager / Hibernate Session
+              |
+              v
+      First-Level Cache
+              |
+       +------+------+
+       |             |
+   User ID 1     User ID 2
+       |
+       v
+   User object
+```
+
+Within the same persistence context, Hibernate generally avoids executing the same entity lookup query repeatedly.
+
+## Example with Hibernate Session
+
+```java
+Session session = sessionFactory.openSession();
+
+User user1 = session.get(User.class, 1L);
+User user2 = session.get(User.class, 1L);
+```
+
+Both lookups refer to the same entity identity within that session.
+
+## Clearing the cache
+
+```java
+entityManager.clear();
+```
+
+This clears the persistence context.
+
+To detach one entity:
+
+```java
+entityManager.detach(user1);
+```
+
+### Interview answer
+
+> First-level cache is the persistence-context-level cache maintained by Hibernate Session or JPA EntityManager. It is enabled by default and is not shared between sessions. It prevents repeated database access for the same entity within the same persistence context.
+
+---
+
+# 9. What is second-level cache in Hibernate?
+
+The **second-level cache** is an optional cache associated with the Hibernate `SessionFactory`.
+
+Unlike first-level cache, it can be shared by multiple sessions.
+
+It normally requires a cache provider or implementation, such as:
+
+* Ehcache
+* Infinispan
+* Other supported providers
+
+## Diagram
+
+```text
+Session 1 --------\
+                    \
+Session 2 -----------> Second-Level Cache
+                    /
+Session 3 --------/
+```
+
+## Example flow
+
+```text
+Session 1 loads User ID 1
+          |
+          v
+First-level cache miss
+          |
+          v
+Second-level cache miss
+          |
+          v
+Database query
+          |
+          v
+Store data in second-level cache
+```
+
+Later:
+
+```text
+Session 2 loads User ID 1
+          |
+          v
+First-level cache miss
+          |
+          v
+Second-level cache hit
+          |
+          v
+Database query may be avoided
+```
+
+## Entity configuration example
+
+In Hibernate-specific configuration, an entity may be marked cacheable:
+
+```java
+@Entity
+@Cacheable
+@org.hibernate.annotations.Cache(
+        usage = CacheConcurrencyStrategy.READ_ONLY
+)
+public class Country {
+
+    @Id
+    private Long id;
+
+    private String name;
+}
+```
+
+This is suitable for relatively static data such as countries or currencies.
+
+### Interview answer
+
+> Second-level cache is an optional Hibernate cache associated with the SessionFactory. It is shared across sessions and can reduce database queries for frequently read data. It requires explicit configuration and an appropriate cache provider.
+
+---
+
+# 10. Difference between first-level and second-level cache
+
+| Feature                 | First-Level Cache                       | Second-Level Cache                           |
+| ----------------------- | --------------------------------------- | -------------------------------------------- |
+| Scope                   | Session / EntityManager                 | SessionFactory                               |
+| Enabled by default      | Yes                                     | No                                           |
+| Shared between sessions | No                                      | Yes                                          |
+| Configuration           | Automatic                               | Requires configuration                       |
+| Lifecycle               | Persistence context                     | SessionFactory/cache lifecycle               |
+| Main purpose            | Avoid repeated reads in one session     | Avoid repeated reads across sessions         |
+| Typical use             | Managed entities in current transaction | Frequently read entities across transactions |
+
+## Diagram
+
+```text
+                    Application
+                         |
+          +--------------+--------------+
+          |                             |
+       Session 1                     Session 2
+          |                             |
+    First-Level Cache             First-Level Cache
+          |                             |
+          +--------------+--------------+
+                         |
+                 Second-Level Cache
+                         |
+                         v
+                      Database
+```
+
+### Easy interview statement
+
+> First-level cache is session-specific and always enabled. Second-level cache is shared across sessions, optional, and configured at the SessionFactory level.
+
+---
+
+# 11. How do you manage sessions in Hibernate?
+
+A Hibernate `Session` represents a unit of work with the database.
+
+It is responsible for:
+
+* Loading entities
+* Persisting entities
+* Updating entities
+* Deleting entities
+* Maintaining the persistence context
+* Managing first-level cache
+
+---
+
+## Traditional Hibernate session management
+
+```java
+Session session = sessionFactory.openSession();
+Transaction transaction = null;
+
+try {
+    transaction = session.beginTransaction();
+
+    User user = session.get(User.class, 1L);
+
+    transaction.commit();
+
+} catch (Exception exception) {
+    if (transaction != null) {
+        transaction.rollback();
+    }
+
+    throw exception;
+
+} finally {
+    session.close();
+}
+```
+
+## Session lifecycle
+
+```text
+Open Session
+     |
+     v
+Begin Transaction
+     |
+     v
+Perform Database Operations
+     |
+     v
+Commit or Rollback
+     |
+     v
+Close Session
+```
+
+---
+
+## Session management in Spring Boot
+
+In Spring Boot with Spring Data JPA, we normally do not manually open and close sessions.
+
+Spring manages the persistence context using:
+
+* `@Transactional`
+* `EntityManager`
+* `JpaTransactionManager`
+* Spring Data JPA repositories
+
+```java
+@Service
+public class UserService {
+
+    private final UserRepository userRepository;
+
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    @Transactional
+    public User getUser(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow();
+    }
+}
+```
+
+Spring generally binds the persistence context to the transaction.
+
+## Best practices
+
+1. Keep transactions short.
+2. Do not share a Hibernate Session between threads.
+3. Do not manually close a container-managed `EntityManager`.
+4. Prefer service-layer transaction boundaries.
+5. Avoid lazy-loading relationships after the transaction has ended.
+6. Avoid holding a transaction while calling slow external services.
+7. Use batching for large inserts or updates.
+
+### Interview answer
+
+> In traditional Hibernate, we explicitly open, begin, commit or roll back, and close a Session. In Spring Boot, Spring usually manages the persistence context through `@Transactional`, EntityManager, and the transaction manager. We should define transaction boundaries at the service layer and never share a session between threads.
+
+---
+
+# 12. What is lazy loading?
+
+**Lazy loading** means related data is loaded only when it is accessed.
+
+It avoids loading unnecessary data from the database.
+
+## Example
+
+```java
+@Entity
+public class Department {
+
+    @Id
+    private Long id;
+
+    private String name;
+
+    @OneToMany(fetch = FetchType.LAZY)
+    private List<Employee> employees;
+}
+```
+
+When we load a department:
+
+```java
+Department department =
+        departmentRepository.findById(1L)
+                .orElseThrow();
+```
+
+Hibernate may execute only:
+
+```sql
+SELECT *
+FROM department
+WHERE id = 1;
+```
+
+The employees are not loaded immediately.
+
+When we access the relationship:
+
+```java
+int count = department.getEmployees().size();
+```
+
+Hibernate may then execute:
+
+```sql
+SELECT *
+FROM employee
+WHERE department_id = 1;
+```
+
+## Diagram
+
+```text
+Load Department
+      |
+      v
+Department loaded
+Employees not loaded
+      |
+      v
+Access getEmployees()
+      |
+      v
+Hibernate loads employees
+```
+
+## Advantages
+
+* Reduces initial database queries.
+* Avoids loading unnecessary relationships.
+* Useful for large collections.
+* Can improve performance when relationships are not always needed.
+
+## Common problem
+
+If the persistence context is closed before accessing the relationship:
+
+```java
+department.getEmployees();
+```
+
+Hibernate may throw:
+
+```text
+LazyInitializationException
+```
+
+### Interview answer
+
+> Lazy loading delays loading of an associated entity or collection until the relationship is accessed. It improves performance by avoiding unnecessary data retrieval, but the persistence context must still be available when the relationship is accessed.
+
+---
+
+# 13. What is eager loading?
+
+**Eager loading** means associated data is loaded immediately or as part of the entity loading process.
+
+## Example
+
+```java
+@Entity
+public class Employee {
+
+    @Id
+    private Long id;
+
+    private String name;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    private Department department;
+}
+```
+
+When an employee is loaded, the department is also loaded according to the provider's fetching strategy.
+
+```text
+Load Employee
+      |
+      v
+Employee + Department loaded
+```
+
+## Advantages
+
+* Related data is available immediately.
+* Reduces some lazy initialization problems.
+
+## Disadvantages
+
+* May load data that is not needed.
+* Can increase memory usage.
+* Can produce additional queries or large joins.
+* Can cause performance issues when relationships are large.
+* May contribute to N+1 problems depending on the mapping and access pattern.
+
+### Important point
+
+`EAGER` does not necessarily mean Hibernate will always use one SQL join. Hibernate may use a join or separate SQL queries depending on the query, mapping, and provider behavior.
+
+### Interview answer
+
+> Eager loading loads associated data immediately along with the main entity or during the entity loading process. It is useful when the relationship is always required, but it can cause unnecessary data loading and performance issues.
+
+---
+
+# 14. What is the N+1 query problem?
+
+The **N+1 query problem** occurs when:
+
+1. One query loads a list of parent entities.
+2. One additional query is executed for each parent to load its related data.
+
+If there are `N` parent records:
+
+```text
+1 query for parents
++
+N queries for children
+=
+N + 1 queries
+```
+
+## Example
+
+Suppose the database contains 100 departments.
+
+```java
+List<Department> departments =
+        departmentRepository.findAll();
+
+for (Department department : departments) {
+    System.out.println(
+            department.getEmployees().size()
+    );
+}
+```
+
+Hibernate may execute:
+
+```sql
+-- Query 1
+SELECT *
+FROM department;
+```
+
+Then:
+
+```sql
+-- Query 2
+SELECT *
+FROM employee
+WHERE department_id = 1;
+
+-- Query 3
+SELECT *
+FROM employee
+WHERE department_id = 2;
+
+-- Query 4
+SELECT *
+FROM employee
+WHERE department_id = 3;
+
+-- ...
+-- Query 101
+SELECT *
+FROM employee
+WHERE department_id = 100;
+```
+
+Total:
+
+```text
+1 + 100 = 101 queries
+```
+
+## Diagram
+
+```text
+Load all departments
+        |
+        v
+     1 query
+        |
+        v
+For every department:
+        |
+        +---- Query employees for Department 1
+        |
+        +---- Query employees for Department 2
+        |
+        +---- Query employees for Department 3
+        |
+        +---- ...
+        |
+        +---- Query employees for Department N
+```
+
+### Interview answer
+
+> The N+1 problem occurs when Hibernate executes one query to fetch parent records and then executes one additional query for each parent to fetch its children. It can cause serious performance degradation when the parent list is large.
+
+---
+
+# 15. How do you resolve the N+1 query problem?
+
+There are several approaches.
+
+---
+
+## Approach 1: Use `JOIN FETCH`
+
+```java
+@Query("""
+       SELECT DISTINCT d
+       FROM Department d
+       LEFT JOIN FETCH d.employees
+       """)
+List<Department> findDepartmentsWithEmployees();
+```
+
+This fetches departments and employees together.
+
+Conceptually:
+
+```sql
+SELECT d.*, e.*
+FROM department d
+LEFT JOIN employee e
+       ON e.department_id = d.id;
+```
+
+## Diagram
+
+```text
+One JOIN FETCH query
+          |
+          v
+Departments + Employees
+```
+
+### Why use `DISTINCT`?
+
+When joining a collection, one department may appear in multiple result rows—one for each employee. `DISTINCT` helps remove duplicate parent entities from the result list.
+
+### Important caution
+
+Fetching multiple large collections using joins can create a Cartesian product or a very large result set. Use it carefully.
+
+---
+
+## Approach 2: Use `@EntityGraph`
+
+```java
+@EntityGraph(attributePaths = {"employees"})
+List<Department> findAll();
+```
+
+This tells Spring Data JPA to fetch the `employees` relationship as part of the query.
+
+It is useful when you want to define fetching behavior without writing explicit JPQL.
+
+---
+
+## Approach 3: Use batch fetching
+
+Hibernate can fetch relationships in groups instead of one at a time.
+
+```java
+@OneToMany(fetch = FetchType.LAZY)
+@BatchSize(size = 20)
+private List<Employee> employees;
+```
+
+Or configure globally:
+
+```properties
+spring.jpa.properties.hibernate.default_batch_fetch_size=20
+```
+
+Instead of:
+
+```text
+100 separate queries
+```
+
+Hibernate may issue queries in batches:
+
+```text
+5 queries, each handling approximately 20 parent IDs
+```
+
+The exact number depends on the data and generated SQL.
+
+---
+
+## Approach 4: Use DTO projection
+
+If the API only needs selected fields, fetch only those fields.
+
+```java
+@Query("""
+       SELECT new com.example.dto.DepartmentEmployeeDto(
+           d.id,
+           d.name,
+           e.name
+       )
+       FROM Department d
+       JOIN d.employees e
+       """)
+List<DepartmentEmployeeDto> findDepartmentEmployeeData();
+```
+
+DTO projections avoid loading complete entities and unnecessary relationships.
+
+---
+
+## Approach 5: Use explicit queries
+
+Instead of relying on implicit lazy loading, explicitly fetch the data required by the use case using:
+
+* JPQL
+* Native SQL
+* Criteria API
+* Entity graphs
+* DTO projections
+
+## Do not blindly change relationships to `EAGER`
+
+Changing everything to `EAGER` is generally not a proper solution because it may:
+
+* Load too much data.
+* Create additional queries.
+* Increase memory consumption.
+* Cause new performance issues.
+
+### Interview answer
+
+> I resolve N+1 problems using fetch joins, `@EntityGraph`, batch fetching, DTO projections, or carefully designed queries. I do not blindly change relationships to `EAGER`, because that can create unnecessary database work.
+
+---
+
+# 16. What are different Hibernate cache strategies?
+
+Hibernate cache strategies describe how cached data behaves when entities are read or updated.
+
+The common concurrency strategies are:
+
+| Strategy               | Description                                                 | Suitable for                                  |
+| ---------------------- | ----------------------------------------------------------- | --------------------------------------------- |
+| `READ_ONLY`            | Data is immutable and cannot be updated through the cache   | Static reference data                         |
+| `NONSTRICT_READ_WRITE` | Allows temporary stale data                                 | Rarely updated data                           |
+| `READ_WRITE`           | Provides stronger consistency using locking or coordination | Read-mostly mutable data                      |
+| `TRANSACTIONAL`        | Cache participates in transactions where supported          | Transactionally consistent cache environments |
+
+---
+
+## 1. `READ_ONLY`
+
+Used when data never changes.
+
+Examples:
+
+* Country codes
+* Currency codes
+* Time zones
+* Immutable reference data
+
+```java
+@Cacheable
+@org.hibernate.annotations.Cache(
+        usage = CacheConcurrencyStrategy.READ_ONLY
+)
+@Entity
+public class Country {
+}
+```
+
+Advantages:
+
+* Good read performance.
+* Simple cache behavior.
+
+Limitation:
+
+* Not suitable for frequently updated entities.
+
+---
+
+## 2. `NONSTRICT_READ_WRITE`
+
+This strategy allows a small period of stale data.
+
+It is suitable when:
+
+* Data changes rarely.
+* Slightly outdated information is acceptable.
+* Strong consistency is not required for every read.
+
+Examples:
+
+* Product descriptions
+* Non-critical catalog metadata
+
+```text
+Database updated
+      |
+      v
+Cache may temporarily contain old value
+```
+
+---
+
+## 3. `READ_WRITE`
+
+This strategy provides stronger consistency than `NONSTRICT_READ_WRITE`.
+
+It uses cache coordination and locking-related mechanisms to reduce inconsistent reads.
+
+It can be used for:
+
+* Frequently read entities.
+* Entities that are updated occasionally.
+* Applications requiring better cache consistency.
+
+---
+
+## 4. `TRANSACTIONAL`
+
+This strategy allows the cache to participate in transactions when the cache provider supports it.
+
+It requires:
+
+* A compatible cache provider.
+* Appropriate transaction integration.
+* Correct infrastructure configuration.
+
+### Important interview distinction
+
+Do not confuse cache levels with cache concurrency strategies.
+
+```text
+Cache levels:
+    First-level cache
+    Second-level cache
+    Query cache
+
+Cache concurrency strategies:
+    READ_ONLY
+    NONSTRICT_READ_WRITE
+    READ_WRITE
+    TRANSACTIONAL
+```
+
+---
+
+# 17. What are different types of cache?
+
+Caching can be discussed at different levels.
+
+## 1. First-level cache
+
+* Managed by Hibernate Session or EntityManager.
+* Enabled by default.
+* Exists within one persistence context.
+* Not shared between sessions.
+
+```text
+EntityManager
+      |
+      v
+First-Level Cache
+```
+
+---
+
+## 2. Second-level cache
+
+* Managed at the Hibernate SessionFactory level.
+* Optional.
+* Shared across sessions belonging to the same SessionFactory.
+* Requires configuration.
+
+```text
+Multiple Sessions
+        |
+        v
+Second-Level Cache
+```
+
+---
+
+## 3. Query cache
+
+The query cache stores query-related information, often including identifiers of matching entities.
+
+For example:
+
+```sql
+SELECT *
+FROM users
+WHERE status = 'ACTIVE';
+```
+
+The query cache may store the identifiers of users matching the query.
+
+Important points:
+
+* It is optional.
+* It generally works with the second-level cache.
+* It requires careful invalidation.
+* It may not be useful for highly dynamic queries.
+
+---
+
+## 4. Application-level cache
+
+This cache is implemented at the service or application layer.
+
+Examples:
+
+* Spring Cache
+* Caffeine
+* Guava Cache
+* Redis
+* Hazelcast
+
+```text
+Controller
+    |
+    v
+Service
+    |
+    v
+Application Cache
+    |
+    +---- Cache hit -> Return data
+    |
+    +---- Cache miss -> Repository -> Database
+```
+
+---
+
+## 5. Distributed cache
+
+A distributed cache is shared by multiple application instances.
+
+Examples:
+
+* Redis
+* Hazelcast
+* Infinispan
+
+```text
+Application 1 ----\
+                    \
+Application 2 ------> Distributed Cache
+                    /
+Application 3 ----/
+```
+
+This is useful when the application is deployed on multiple servers.
+
+## Summary
+
+| Cache type         | Scope                               |
+| ------------------ | ----------------------------------- |
+| First-level cache  | One persistence context             |
+| Second-level cache | Hibernate SessionFactory            |
+| Query cache        | Query result information            |
+| Application cache  | Application/service layer           |
+| Distributed cache  | Shared across application instances |
+
+---
+
+# 18. How would you implement caching in a Spring Boot application?
+
+Spring Boot provides a caching abstraction through **Spring Cache**.
+
+The general implementation steps are:
+
+```text
+1. Add cache dependency
+2. Enable caching
+3. Use @Cacheable
+4. Use @CachePut for updates
+5. Use @CacheEvict for deletion/invalidation
+6. Configure a cache provider
+```
+
+---
+
+## Step 1: Add dependency
+
+For Spring’s caching abstraction:
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-cache</artifactId>
+</dependency>
+```
+
+For a production application, we can use a provider such as:
+
+* Caffeine
+* Redis
+* Hazelcast
+
+---
+
+## Step 2: Enable caching
+
+```java
+@Configuration
+@EnableCaching
+public class CacheConfig {
+}
+```
+
+`@EnableCaching` enables Spring’s cache interception mechanism.
+
+---
+
+## Step 3: Use `@Cacheable`
+
+```java
+@Service
+public class ProductService {
+
+    private final ProductRepository productRepository;
+
+    public ProductService(ProductRepository productRepository) {
+        this.productRepository = productRepository;
+    }
+
+    @Cacheable(value = "products", key = "#id")
+    public Product getProduct(Long id) {
+        System.out.println("Fetching product from database");
+
+        return productRepository.findById(id)
+                .orElseThrow();
+    }
+}
+```
+
+## First call
+
+```java
+productService.getProduct(10L);
+```
+
+```text
+Check cache
+     |
+     v
+Cache miss
+     |
+     v
+Execute database query
+     |
+     v
+Store result in cache
+     |
+     v
+Return product
+```
+
+## Second call
+
+```java
+productService.getProduct(10L);
+```
+
+```text
+Check cache
+     |
+     v
+Cache hit
+     |
+     v
+Return cached product
+```
+
+The database method is normally not executed on the second call.
+
+---
+
+## Step 4: Use `@CachePut`
+
+`@CachePut` always executes the method and updates the cache with the returned result.
+
+```java
+@CachePut(value = "products", key = "#result.id")
+public Product updateProduct(Product product) {
+    return productRepository.save(product);
+}
+```
+
+Flow:
+
+```text
+Update database
+      |
+      v
+Update cache with returned object
+```
+
+---
+
+## Step 5: Use `@CacheEvict`
+
+`@CacheEvict` removes data from the cache.
+
+```java
+@CacheEvict(value = "products", key = "#id")
+public void deleteProduct(Long id) {
+    productRepository.deleteById(id);
+}
+```
+
+To clear all entries:
+
+```java
+@CacheEvict(value = "products", allEntries = true)
+public void clearProductCache() {
+}
+```
+
+---
+
+## Step 6: Use `@Caching`
+
+`@Caching` groups multiple cache operations.
+
+```java
+@Caching(
+        put = {
+            @CachePut(
+                    value = "products",
+                    key = "#result.id"
+            )
+        },
+        evict = {
+            @CacheEvict(
+                    value = "productList",
+                    allEntries = true
+            )
+        }
+)
+public Product updateProduct(Product product) {
+    return productRepository.save(product);
+}
+```
+
+This example:
+
+1. Updates the individual product cache.
+2. Clears the product-list cache because the list may have changed.
+
+---
+
+# Complete Spring Cache example
+
+```java
+@Configuration
+@EnableCaching
+public class CacheConfig {
+}
+```
+
+```java
+@Service
+@CacheConfig(cacheNames = "products")
+public class ProductService {
+
+    private final ProductRepository productRepository;
+
+    public ProductService(ProductRepository productRepository) {
+        this.productRepository = productRepository;
+    }
+
+    @Cacheable(key = "#id")
+    public Product getProduct(Long id) {
+        return productRepository.findById(id)
+                .orElseThrow();
+    }
+
+    @CachePut(key = "#result.id")
+    public Product updateProduct(Long id, Product product) {
+        product.setId(id);
+        return productRepository.save(product);
+    }
+
+    @CacheEvict(key = "#id")
+    public void deleteProduct(Long id) {
+        productRepository.deleteById(id);
+    }
+}
+```
+
+## Cache flow
+
+```text
+                 Client Request
+                       |
+                       v
+                 ProductService
+                       |
+                       v
+                   Check Cache
+                   /          \
+                Hit            Miss
+                 |               |
+                 v               v
+          Return Cached     Query Database
+          Product                 |
+                                  v
+                           Store in Cache
+                                  |
+                                  v
+                            Return Product
+```
+
+---
+
+# Using Redis as a distributed cache
+
+For multiple application instances, Redis is a common choice.
+
+## Architecture
+
+```text
+                         Client
+                           |
+                           v
+                     Load Balancer
+                           |
+                 +---------+---------+
+                 |                   |
+                 v                   v
+          Application 1       Application 2
+                 |                   |
+                 +---------+---------+
+                           |
+                           v
+                          Redis
+                           |
+                           v
+                        Database
+```
+
+Both application instances use the same Redis cache.
+
+Typical configuration:
+
+```properties
+spring.cache.type=redis
+spring.data.redis.host=localhost
+spring.data.redis.port=6379
+```
+
+The exact configuration properties may vary depending on the Spring Boot version and Redis setup.
+
+---
+
+# Important caching concepts
+
+## 1. Cache-aside pattern
+
+The application checks the cache first.
+
+```text
+Read request
+     |
+     v
+Check cache
+     |
+     +---- Hit ----> Return cached data
+     |
+     +---- Miss
+              |
+              v
+        Read database
+              |
+              v
+        Store in cache
+              |
+              v
+        Return data
+```
+
+`@Cacheable` commonly supports this type of behavior.
+
+---
+
+## 2. Cache invalidation
+
+When data changes, the cache must be updated or removed.
+
+```text
+Update database
+      |
+      v
+Update or evict cache
+```
+
+If invalidation is incorrect, users may see stale data.
+
+---
+
+## 3. Cache key design
+
+The cache key must uniquely identify the data.
+
+```java
+@Cacheable(value = "products", key = "#id")
+public Product getProduct(Long id) {
+    // ...
+}
+```
+
+For multiple parameters:
+
+```java
+@Cacheable(
+        value = "products",
+        key = "#category + ':' + #page + ':' + #size"
+)
+public Page<Product> getProducts(
+        String category,
+        int page,
+        int size) {
+    // ...
+}
+```
+
+---
+
+## 4. Spring caching is proxy-based
+
+Spring caching is commonly implemented using proxies.
+
+Therefore, self-invocation may bypass caching.
+
+```java
+@Service
+public class ProductService {
+
+    public void methodA() {
+        methodB(); // May bypass Spring cache proxy
+    }
+
+    @Cacheable("products")
+    public Product methodB() {
+        // Database operation
+        return null;
+    }
+}
+```
+
+Calling `methodB()` from another Spring bean through the proxy generally allows caching to work.
+
+---
+
+## 5. Common caching problems
+
+* Stale data
+* Incorrect cache keys
+* Cache stampede
+* Cache penetration
+* Cache eviction problems
+* Excessive memory usage
+* Serialization issues
+* Inconsistent cache across application instances
+* Caching sensitive or rapidly changing data
+* Cache invalidation failures
+
+---
+
+# Final quick revision table
+
+| Topic                        | Easy interview answer                                                         |
+| ---------------------------- | ----------------------------------------------------------------------------- |
+| Transaction                  | A logical unit of work committed or rolled back together                      |
+| ACID                         | Atomicity, Consistency, Isolation, Durability                                 |
+| Propagation                  | Defines how a method participates in a transaction                            |
+| `REQUIRED`                   | Joins an existing transaction or creates one                                  |
+| `REQUIRES_NEW`               | Suspends the existing transaction and creates a new one                       |
+| `REQUIRED` vs `REQUIRES_NEW` | Shared transaction vs independent transaction                                 |
+| Inner `REQUIRES_NEW` failure | Inner transaction rolls back; outer transaction depends on exception handling |
+| First-level cache            | Session/EntityManager-level cache, enabled by default                         |
+| Second-level cache           | Optional cache shared across sessions in a SessionFactory                     |
+| Session management           | Spring usually manages sessions through `@Transactional` and EntityManager    |
+| Lazy loading                 | Loads relationships when accessed                                             |
+| Eager loading                | Loads relationships immediately or during entity loading                      |
+| N+1 problem                  | One parent query plus one query for each parent                               |
+| N+1 solutions                | Fetch join, EntityGraph, batch fetching, DTO projection                       |
+| Hibernate cache strategies   | `READ_ONLY`, `NONSTRICT_READ_WRITE`, `READ_WRITE`, `TRANSACTIONAL`            |
+| Cache types                  | First-level, second-level, query, application, distributed                    |
+| Spring Boot caching          | `@EnableCaching`, `@Cacheable`, `@CachePut`, `@CacheEvict`                    |
