@@ -82,135 +82,147 @@ Process message
  ---
  ---
 
- Absolutely. Since your Tesco interview is tomorrow, I’d focus on practical system-design interview skills rather than trying to memorize hundreds of designs.
+ Absolutely — here’s a cleaned-up, interview-friendly version with proper headings, bullets, spacing, and code blocks.
 
-For a Tesco-style backend/system-design interview, you should be comfortable discussing microservices, asynchronous messaging, scalability, resilience, APIs, databases, caching, consistency, observability, and failure handling.
+ # Tesco System Design Interview Preparation
 
-1. What the interviewer is really evaluating
-They usually aren't looking for the "perfect architecture." They want to see whether you can:
+ Since your Tesco interview is tomorrow, I’d focus on **practical system-design interview skills** rather than trying to memorize hundreds of designs.
 
-Clarify requirements before designing.
+ For a Tesco-style backend/system-design interview, you should be comfortable discussing:
 
-Break a large problem into services.
+ - Microservices
+- Asynchronous messaging
+- Scalability
+- Resilience
+- APIs
+- Databases
+- Caching
+- Consistency
+- Observability
+- Failure handling
 
-Choose appropriate databases and explain why.
+---
 
-Design APIs/events.
+ # What the Interviewer Is Really Evaluating
 
-Handle high traffic and scaling.
+ They usually aren't looking for the **"perfect architecture."** They want to see whether you can:
 
-Think about failures and recovery.
+ - Clarify requirements before designing.
+- Break a large problem into services.
+- Choose appropriate databases and explain why.
+- Design APIs and events.
+- Handle high traffic and scaling.
+- Think about failures and recovery.
+- Explain consistency and transactions.
+- Identify bottlenecks.
+- Discuss security and observability.
+- Communicate your decisions clearly.
 
-Explain consistency and transactions.
+ A strong answer sounds like:
 
-Identify bottlenecks.
+ > "I’ll first clarify the functional and non-functional requirements. Then I'll propose a high-level architecture, drill into the critical flows, discuss data storage and consistency, and finally cover scalability, resilience, observability and trade-offs."
 
-Discuss security and observability.
+ **Memorize that structure.**
 
-Communicate your decisions clearly.
+---
 
-A strong answer sounds like:
+ # Your System-Design Framework
 
-"I’ll first clarify the functional and non-functional requirements. Then I'll propose a high-level architecture, drill into the critical flows, discuss data storage and consistency, and finally cover scalability, resilience, observability and trade-offs."
+ Use this **7-step framework** for almost every question.
 
-Memorize that structure.
+ ## Step 1 — Clarify Requirements
 
-2. Your system-design framework
-Use this 7-step framework for almost every question.
+ Suppose they ask:
 
-Step 1 — Clarify requirements
-Suppose they ask:
+ > "Design an online grocery ordering system."
 
-"Design an online grocery ordering system."
+ Don't immediately draw boxes.
 
-Don't immediately draw boxes.
+ Ask about:
 
-Ask:
+ ### Functional Requirements
 
-Functional requirements
-Can users browse products?
+ - Can users browse products?
+- Search products?
+- Add products to cart?
+- Place an order?
+- Make payment?
+- Choose delivery slots?
+- Track order?
+- Cancel order?
+- Receive notifications?
 
-Search products?
+ ### Non-Functional Requirements
 
-Add products to cart?
+ Ask about:
 
-Place an order?
+ - Expected users
+- Requests per second
+- Availability
+- Latency
+- Consistency
+- Data retention
+- Geographic scope
+- Disaster recovery
 
-Make payment?
+ You don't need to ask 20 questions.
 
-Choose delivery slots?
+ Ask **3–5 important questions**, then make reasonable assumptions.
 
-Track order?
+ For example:
 
-Cancel order?
+ > "I'll assume 10 million registered users, 1 million daily active users, peak traffic around 10x average, and availability of 99.9% for ordering."
 
-Receive notifications?
+ This immediately makes your design more concrete.
 
-Non-functional requirements
-Ask about:
+---
 
-Expected users?
+ # Step 2 — Estimate Scale
 
-Requests per second?
+ This is often overlooked.
 
-Availability?
+ Example:
 
-Latency?
+ Assume:
 
-Consistency?
+ - 10 million registered users
+- 1 million DAU
+- 100,000 orders/day
+- Peak = 10x average
 
-Data retention?
+ ### Orders
 
-Geographic scope?
+```
+100,000 / 86,400 ≈ 1.16 orders/sec average
+```
 
-Disaster recovery?
+ Peak:
 
-You don't need to ask 20 questions.
-
-Ask 3–5 important questions, then make reasonable assumptions.
-
-For example:
-
-"I'll assume 10 million registered users, 1 million daily active users, peak traffic around 10x average, and availability of 99.9% for ordering."
-
-This immediately makes your design more concrete.
-
-3. Step 2 — Estimate scale
-This is often overlooked.
-
-Example:
-
-Assume:
-
-10 million registered users
-1 million DAU
-100,000 orders/day
-Peak = 10x average
-
-Orders:
-
-100,000 / 86,400
-≈ 1.16 orders/sec average
-
-Peak:
-
+```
 ≈ 12 orders/sec
+```
 
-But browsing/search traffic may be 100–1000x higher than order creation.
+ But browsing/search traffic may be **100–1000x higher** than order creation.
 
-Therefore:
+ Therefore:
 
-Product browsing → very high traffic
-Search           → very high traffic
-Cart             → medium traffic
-Order            → lower traffic but critical
-Payment          → lower traffic but critical
+ | Operation | Traffic | Criticality |
+| --- | --- | --- |
+| Product browsing | Very high | Medium |
+| Search | Very high | Medium |
+| Cart | Medium | Medium |
+| Order | Lower | High |
+| Payment | Lower | Very high |
 
-This leads naturally to different scaling strategies.
+This naturally leads to different scaling strategies.
 
-4. Step 3 — High-level architecture
-For a Tesco-like grocery platform, you could start with:
+---
 
+ # Step 3 — High-Level Architecture
+
+ For a Tesco-like grocery platform, you could start with:
+
+```
                     ┌───────────────┐
                     │ Mobile / Web  │
                     └───────┬───────┘
@@ -219,373 +231,445 @@ For a Tesco-like grocery platform, you could start with:
                      │ API Gateway │
                      └──────┬──────┘
                             │
-       ┌────────────────────┼────────────────────┐
-       │                    │                    │
- ┌─────▼─────┐        ┌─────▼─────┐        ┌─────▼──────┐
- │ Product   │        │   Cart     │        │   Order    │
- │ Service   │        │  Service   │        │  Service   │
- └─────┬─────┘        └─────┬─────┘        └─────┬──────┘
-       │                    │                    │
-       │                    │              ┌─────▼──────┐
-       │                    │              │  Payment   │
-       │                    │              │  Service   │
-       │                    │              └────────────┘
-       │                    │
- ┌─────▼──────┐       ┌────▼─────┐
- │ Product DB │       │  Cart DB │
- └────────────┘       └──────────┘
+        ┌───────────────────┼───────────────────┐
+        │                   │                   │
+   ┌────▼─────┐        ┌────▼─────┐       ┌────▼──────┐
+   │ Product  │        │   Cart    │       │   Order   │
+   │ Service  │        │  Service  │       │  Service  │
+   └────┬─────┘        └────┬─────┘       └────┬──────┘
+        │                   │                   │
+   ┌────▼─────┐        ┌────▼─────┐       ┌────▼──────┐
+   │ Product  │        │ Cart DB  │       │  Order DB │
+   │    DB    │        └──────────┘       └───────────┘
+   └──────────┘
 
                      ┌─────────────┐
                      │ Message Bus │
-                     │ Kafka/SQS   │
+                     │ Kafka / SQS │
                      └──────┬──────┘
                             │
-          ┌─────────────────┼─────────────────┐
-          ↓                 ↓                 ↓
-    Inventory          Notification       Delivery
-     Service              Service          Service
+              ┌─────────────┼─────────────┐
+              ↓             ↓             ↓
+         Inventory     Notification    Delivery
+          Service        Service        Service
 
-Then explain why.
+                     ┌─────────────┐
+                     │   Payment   │
+                     │   Service   │
+                     └─────────────┘
+```
 
-5. Synchronous vs asynchronous communication
-This is very important, especially because you were asking about asynchronous microservices.
+ Then explain **why** you made those choices.
 
-Synchronous
+---
+
+ # Synchronous vs Asynchronous Communication
+
+ This is very important, especially for asynchronous microservices.
+
+ ## Synchronous
+
+```
 Order Service
-     |
-     | HTTP/gRPC
-     ↓
+      │
+      │ HTTP / gRPC
+      ↓
 Payment Service
+```
 
-Order Service waits for Payment Service.
+ The Order Service waits for the Payment Service.
 
-Good when:
+ Good when:
 
-You need an immediate response.
+ - You need an immediate response.
+- The result is required to continue.
+- The user is waiting for the result.
 
-The result is required to continue.
+ ## Asynchronous
 
-User is waiting.
-
-Asynchronous
+```
 Order Service
-     |
-     | OrderCreated
-     ↓
-   Kafka
-     |
-     ├── Inventory Service
-     ├── Payment Service
-     └── Notification Service
+      │
+      │ OrderCreated
+      ↓
+    Kafka
+      │
+      ├── Inventory Service
+      ├── Payment Service
+      └── Notification Service
+```
 
-Good when:
+ Good when:
 
-Work doesn't need immediate response.
+ - Work doesn't need an immediate response.
+- Services should be decoupled.
+- You want better resilience.
+- Traffic can be processed asynchronously.
 
-Services should be decoupled.
+ ### Interview Answer
 
-You want better resilience.
+ If they ask:
 
-Traffic can be processed asynchronously.
+ > "Why Kafka?"
 
-Interview answer
-If they ask:
+ Say:
 
-"Why Kafka?"
+ > "I would use asynchronous messaging for operations that don't need an immediate response. It decouples services, provides buffering during traffic spikes, and allows consumers to retry independently. For critical request-response operations such as checking payment authorization, I may still use synchronous communication."
 
-Say:
+ That's a strong answer.
 
-"I would use asynchronous messaging for operations that don't need an immediate response. It decouples services, provides buffering during traffic spikes, and allows consumers to retry independently. For critical request-response operations such as checking payment authorization, I may still use synchronous communication."
+---
 
-That's a strong answer.
+ # Resilience — Very Important
 
-6. Resilience — very important
-Since Tesco may ask about microservices, be prepared for:
+ Since Tesco may ask about microservices, be prepared for:
 
-"What happens if one service goes down?"
+ > "What happens if one service goes down?"
 
-Suppose:
+ Suppose:
 
+```
 Order Service
-     ↓
+      ↓
 Payment Service ❌
+```
 
-Don't let the whole system collapse.
+ Don't let the whole system collapse.
 
-Use:
+ ## Retry
 
-Retry
+ Use **exponential backoff + jitter**.
+
+```
 Request
- ↓
+   ↓
 Failure
- ↓
+   ↓
 1 sec
- ↓
+   ↓
 Retry
- ↓
+   ↓
 2 sec
- ↓
+   ↓
 Retry
- ↓
+   ↓
 4 sec
+   ↓
+Retry
+```
 
-Use exponential backoff + jitter.
+ ## Circuit Breaker
 
-Circuit breaker
+```
 Payment Service
-     ↓
+      ↓
 Failures increasing
-     ↓
+      ↓
 Circuit OPEN
-     ↓
+      ↓
 Stop requests temporarily
-     ↓
+      ↓
 Wait
-     ↓
+      ↓
 Try again
+```
 
-Timeout
-Never wait forever.
+ ## Timeout
 
+ Never wait forever.
+
+ Example:
+
+```
 Payment timeout = 3 seconds
+```
 
-Dead Letter Queue
+ ## Dead Letter Queue
+
+```
 Kafka
- ↓
+  ↓
 Consumer
- ↓
+  ↓
 Failure
- ↓
+  ↓
 Retry
- ↓
+  ↓
 Retry
- ↓
+  ↓
 Retry
- ↓
+  ↓
 DLQ
+```
 
-Idempotency
-This is extremely important.
+---
 
-Imagine:
+ # Idempotency
 
+ This is **extremely important**.
+
+ Imagine:
+
+```
 OrderCreated
+```
 
-is delivered twice.
+ is delivered twice.
 
-Without idempotency:
+ Without idempotency:
 
+```
 Customer charged £100
 Customer charged £100
+```
 
-With idempotency:
+ With idempotency:
 
+```
 eventId = ABC123
 
 First → process
+
 Second → already processed → ignore
+```
 
-You should mention this whenever discussing Kafka/event-driven systems.
+ You should mention this whenever discussing Kafka/event-driven systems.
 
-7. Database selection
-Don't say:
+---
 
-"We'll use MongoDB because it's scalable."
+ # Database Selection
 
-Explain the reason.
+ Don't say:
 
-Relational DB — PostgreSQL/MySQL
-Use when you need:
+ > "We'll use MongoDB because it's scalable."
 
-Transactions
+ Explain the reason.
 
-Strong consistency
+ ## Relational DB — PostgreSQL / MySQL
 
-Relationships
+ Use when you need:
 
-ACID guarantees
+ - Transactions
+- Strong consistency
+- Relationships
+- ACID guarantees
 
-Examples:
+ Examples:
 
-Orders
-Payments
-Customers
+ - Orders
+- Payments
+- Customers
 
-NoSQL
-Good for:
+ ## NoSQL
 
-Very high scale
+ Good for:
 
-Flexible schema
+ - Very high scale
+- Flexible schema
+- Key-value access
+- Massive distributed workloads
 
-Key-value access
+ Examples:
 
-Massive distributed workloads
+ - Shopping cart
+- Session data
+- Some product/catalog workloads
 
-Examples:
+ ## Redis
 
-Shopping cart
-Session data
-Some product/catalog workloads
+ Use for:
 
-Redis
-Use for:
+ - Caching
+- Sessions
+- Frequently accessed data
+- Rate limiting
+- Short-lived state
 
-Caching
+ ## Elasticsearch / OpenSearch
 
-Sessions
+ Good for:
 
-Frequently accessed data
+ - Product search
+- Filtering
+- Autocomplete
+- Ranking
 
-Rate limiting
+---
 
-Short-lived state
+ # Caching
 
-Elasticsearch/OpenSearch
-Good for:
+ Suppose millions of customers search:
 
-Product search
-Filtering
-Autocomplete
-Ranking
+ > "milk"
 
-8. Caching
-Suppose millions of customers search:
+ You don't want every request hitting your database.
 
-"milk"
+ Use:
 
-You don't want every request hitting your database.
-
-Use:
-
+```
 Client
   ↓
 API
   ↓
 Redis Cache
-  ↓ cache miss
+  ↓
+cache miss
+  ↓
 Product DB
+```
 
-Pattern:
+ Pattern:
 
-Cache hit → return quickly
+```
+Cache hit
+   ↓
+Return quickly
 
 Cache miss
-    ↓
+   ↓
 Database
-    ↓
+   ↓
 Update cache
-    ↓
+   ↓
 Return
+```
 
-Mention:
+ Mention:
 
-TTL
+ - TTL
+- Cache invalidation
+- Cache-aside pattern
+- Hot keys
+- Cache stampede
 
-Cache invalidation
+ A good interview statement:
 
-Cache-aside pattern
+ > "Product information is read-heavy, so I would use Redis as a cache with a TTL. The source of truth remains the product database."
 
-Hot keys
+---
 
-Cache stampede
+ # Database Scaling
 
-A good interview statement:
+ If one DB becomes overloaded:
 
-"Product information is read-heavy, so I would use Redis as a cache with a TTL. The source of truth remains the product database."
+```
+                  ┌── Read Replica
+                  │
+Application ──────┤
+                  │
+                  └── Read Replica
 
-9. Database scaling
-If one DB becomes overloaded:
+                  ↓
+              Primary DB
+```
 
-Read replicas
-              ┌── Read Replica
-              │
-Application → Primary DB
-              │
-              └── Read Replica
+ - Writes → Primary
+- Reads → Replicas
 
-Writes → primary.
+ ## Partitioning / Sharding
 
-Reads → replicas.
+ For very large datasets:
 
-Partitioning / sharding
-For very large datasets:
-
+```
 Customer ID
      ↓
-Shard 1
-Shard 2
-Shard 3
-Shard 4
+ ┌───┼───┬───┐
+ ↓   ↓   ↓   ↓
+S1  S2  S3  S4
+```
 
-But don't introduce sharding unnecessarily.
+ But don't introduce sharding unnecessarily.
 
-Say:
+ Say:
 
-"I would start with a well-indexed relational database and read replicas. I'd introduce partitioning or sharding only when scale requires it."
+ > "I would start with a well-indexed relational database and read replicas. I'd introduce partitioning or sharding only when scale requires it."
 
-That's usually better than prematurely designing a massively distributed DB.
+ That's usually better than prematurely designing a massively distributed database.
 
-10. Consistency
-This is one of the most common interview areas.
+---
 
-Suppose two customers try to buy the last item:
+ # Consistency
 
+ This is one of the most common interview areas.
+
+ Suppose two customers try to buy the last item:
+
+```
 Inventory = 1
 
-Customer A → buy
-Customer B → buy
+Customer A → Buy
+Customer B → Buy
+```
 
-You cannot allow:
+ You cannot allow:
 
-A → success
-B → success
+```
+A → Success
+B → Success
+```
 
-when only one item exists.
+ when only one item exists.
 
-You need an atomic inventory operation.
+ You need an atomic inventory operation.
 
-For example conceptually:
+ For example, conceptually:
 
+```
 UPDATE inventory
 SET quantity = quantity - 1
 WHERE product_id = ?
-AND quantity > 0;
+  AND quantity > 0;
+```
 
-If affected rows = 1:
+ If affected rows = `1`:
 
+```
 Success
+```
 
-If affected rows = 0:
+ If affected rows = `0`:
 
+```
 Out of stock
+```
 
-Then discuss reservation if the business flow requires holding stock during checkout.
+ Then discuss **reservation** if the business flow requires holding stock during checkout.
 
-11. Distributed transactions
-This is another major topic.
+---
 
-Imagine:
+ # Distributed Transactions
 
+ Another major topic.
+
+ Imagine:
+
+```
 Order
+  ↓
 Payment
+  ↓
 Inventory
+  ↓
 Delivery
+```
 
-You don't want:
+ You don't want:
 
+```
 Payment successful
 Inventory failed
 Order failed
+```
 
-while the customer is charged.
+ while the customer is charged.
 
-A distributed transaction across multiple microservices is difficult.
+ A distributed transaction across multiple microservices is difficult.
 
-Instead, consider a Saga pattern.
+ Instead, consider a **Saga pattern**.
 
-Example:
+ Example:
 
+```
 Create Order
      ↓
 Reserve Inventory
@@ -593,96 +677,132 @@ Reserve Inventory
 Authorize Payment
      ↓
 Confirm Order
+```
 
-If payment fails:
+ If payment fails:
 
+```
 Payment failed
       ↓
 Release Inventory
       ↓
 Cancel Order
+```
 
-This is a compensating transaction.
+ This is a **compensating transaction**.
 
-You should know the terms:
+ Know these terms:
 
-Saga
+ - Saga
+- Choreography
+- Orchestration
+- Compensating transaction
+- Eventual consistency
 
-Choreography
+---
 
-Orchestration
+ # Kafka Interview Preparation
 
-Compensating transaction
+ Given your interest in asynchronous architecture, I would prepare Kafka particularly well.
 
-Eventual consistency
+ Know:
 
-12. Kafka interview preparation
-Given your interest in asynchronous architecture, I would prepare Kafka particularly well.
+ - Producers
+- Topics
+- Partitions
+- Consumer groups
+- Offsets
+- At-least-once delivery
+- Ordering
+- Idempotency
+- Retries
+- Dead-letter queues
 
-Know:
+ ## Producer
 
-Producer
-Order Service → Kafka
+```
+Order Service
+      ↓
+    Kafka
+      ↓
+orders / payments / inventory / notifications
+```
 
-Topic
-orders
-payments
-inventory
-notifications
+ ## Partitions
 
-Partition
+```
 orders topic
 
 Partition 0
 Partition 1
 Partition 2
 Partition 3
+```
 
-Partitions provide parallelism.
+ Partitions provide **parallelism**.
 
-Consumer group
+ ## Consumer Group
+
+```
              Kafka
-          /    |    \
-        C1     C2    C3
-       Consumer Group
+               │
+        ┌──────┼──────┐
+        ↓      ↓      ↓
+       C1     C2     C3
+        └──────────────┘
+          Consumer Group
+```
 
-Each partition is processed by one consumer within a consumer group.
+ Each partition is processed by one consumer within a consumer group.
 
-Offset
-Consumers track what messages they've processed.
+ ## Offset
 
-At-least-once delivery
-Messages may be processed more than once.
+ Consumers track what messages they've processed.
 
-Therefore:
+ ## At-Least-Once Delivery
 
-Idempotency is essential.
+ Messages may be processed more than once.
 
-Ordering
-Kafka guarantees ordering within a partition, not across the entire topic.
+ Therefore:
 
-So if order matters, choose an appropriate partition key.
+ > **Idempotency is essential.**
 
-For example:
+ ## Ordering
 
+ Kafka guarantees ordering **within a partition**, not across the entire topic.
+
+ So if order matters, choose an appropriate partition key.
+
+ For example:
+
+```
 key = orderId
+```
 
-Then events for the same order go to the same partition.
+ Then events for the same order go to the same partition.
 
-13. API design
-Be comfortable designing APIs.
+---
 
-Example:
+ # API Design
 
-POST /orders
-GET  /orders/{orderId}
-POST /orders/{orderId}/cancel
-GET  /products/{productId}
-POST /cart/items
+ Be comfortable designing APIs.
+
+ Example:
+
+```
+POST   /orders
+GET    /orders/{orderId}
+POST   /orders/{orderId}/cancel
+
+GET    /products/{productId}
+
+POST   /cart/items
 DELETE /cart/items/{productId}
+```
 
-For order creation:
+ For order creation:
 
+```
 {
   "customerId": "123",
   "items": [
@@ -693,273 +813,323 @@ For order creation:
   ],
   "deliverySlot": "2026-09-16T18:00"
 }
+```
 
-For important POST operations, discuss:
+ For important POST operations, discuss:
 
-Idempotency key
+ ### Idempotency Key
+
+```
 Idempotency-Key: 8f32...
+```
 
-If the client retries:
+ If the client retries:
 
+```
 POST /orders
+```
 
-same idempotency key
+ with the same idempotency key, the system doesn't create two orders.
 
-the system doesn't create two orders.
+---
 
-14. API Gateway
-Know why you'd use it.
+ # API Gateway
 
-Mobile/Web
-    ↓
+ Know why you'd use it.
+
+```
+Mobile / Web
+     ↓
 API Gateway
-    ↓
+     ↓
 Microservices
+```
 
-Responsibilities can include:
+ Responsibilities can include:
 
-Authentication
+ - Authentication
+- Authorization
+- Rate limiting
+- Routing
+- Request validation
+- TLS termination
+- API versioning
 
-Authorization
+ **Don't put business logic there.**
 
-Rate limiting
+---
 
-Routing
+ # Load Balancing
 
-Request validation
+ Example:
 
-TLS termination
+```
+          Load Balancer
+         /      |      \
+        ↓       ↓       ↓
+     Order    Order    Order
+    Service  Service  Service
+```
 
-API versioning
+ Benefits:
 
-Don't put business logic there.
+ - Horizontal scaling
+- High availability
+- Traffic distribution
+- Instance failure handling
 
-15. Load balancing
-Example:
+---
 
-                  Load Balancer
-                 /      |      \
-                ↓       ↓       ↓
-             Order    Order    Order
-            Service  Service  Service
+ # Observability
 
-Benefits:
+ Very important in distributed systems.
 
-Horizontal scaling
+ You need:
 
-High availability
+ ## Logs
 
-Traffic distribution
-
-Instance failure handling
-
-16. Observability
-Very important in distributed systems.
-
-You need:
-
-Logs
+```
 Order Service
 Payment Service
 Inventory Service
+```
 
-centralized logs.
+ Use centralized logs.
 
-Metrics
-Track:
+ ## Metrics
 
-CPU
-Memory
-Request latency
-Error rate
-Kafka lag
-DB connections
-Throughput
+ Track:
 
-Distributed tracing
-Example:
+ - CPU
+- Memory
+- Request latency
+- Error rate
+- Kafka lag
+- DB connections
+- Throughput
 
+ ## Distributed Tracing
+
+ Example:
+
+```
 Request ID: ABC123
 
 API Gateway
-    ↓
+     ↓
 Order Service
-    ↓
+     ↓
 Payment Service
-    ↓
+     ↓
 Inventory Service
+```
 
-You can trace one customer request across services.
+ You can trace one customer request across services.
 
-Mention tools such as:
+ Mention tools such as:
 
-OpenTelemetry
+ - OpenTelemetry
+- Prometheus
+- Grafana
+- ELK / OpenSearch
+- Jaeger
 
-Prometheus
+---
 
-Grafana
+ # Security
 
-ELK/OpenSearch
+ Don't forget this at the end.
 
-Jaeger
+ Mention:
 
-17. Security
-Don't forget this at the end.
+ - OAuth2 / OIDC
+- JWT where appropriate
+- TLS
+- Encryption at rest
+- Secrets management
+- RBAC
+- Input validation
+- Rate limiting
+- Audit logging
+- PCI considerations for payment data
 
-Mention:
+ For payments, avoid storing sensitive card information yourself unless there is a strong business reason and the appropriate compliance architecture.
 
-OAuth2/OIDC
+---
 
-JWT where appropriate
+ # The Tesco-Style Design I'd Practice First
 
-TLS
+ If I were preparing you for tomorrow, I'd make this your **#1 practice problem**:
 
-Encryption at rest
+ > **Design an online grocery shopping system.**
 
-Secrets management
+ ## Requirements
 
-RBAC
-
-Input validation
-
-Rate limiting
-
-Audit logging
-
-PCI considerations for payment data
-
-For payments, avoid storing sensitive card information yourself unless there is a strong business reason and the appropriate compliance architecture.
-
-18. The Tesco-style design I'd practice first
-If I were preparing you for tomorrow, I'd make this your #1 practice problem:
-
-Design an online grocery shopping system
-Requirements:
-
+```
 Customer
- ↓
+   ↓
 Browse products
- ↓
+   ↓
 Search
- ↓
+   ↓
 Add to cart
- ↓
+   ↓
 Checkout
- ↓
+   ↓
 Choose delivery slot
- ↓
+   ↓
 Payment
- ↓
+   ↓
 Order confirmation
- ↓
+   ↓
 Delivery
+```
 
-Architecture:
+ ## Architecture
 
-                         ┌──────────────┐
-                         │ Web / Mobile │
-                         └──────┬───────┘
-                                ↓
-                         ┌──────────────┐
-                         │ API Gateway  │
-                         └──────┬───────┘
-                                │
-       ┌────────────────────────┼─────────────────────┐
-       ↓                        ↓                     ↓
- Product Service          Cart Service          Order Service
-       │                        │                     │
-       ↓                        ↓                     ↓
- Product DB                 Redis/DB             Order DB
-       │                                              │
-       ↓                                              ↓
- Search Index                                      Kafka
-                                                      │
-                        ┌─────────────────────────────┼─────────────┐
-                        ↓                             ↓             ↓
-                   Inventory                      Payment      Notification
-                    Service                       Service         Service
-                        │                             │
-                        ↓                             ↓
-                   Inventory DB                  Payment Provider
+```
+                     ┌──────────────┐
+                     │ Web / Mobile │
+                     └──────┬───────┘
+                            ↓
+                     ┌──────────────┐
+                     │ API Gateway  │
+                     └──────┬───────┘
+                            │
+      ┌─────────────────────┼──────────────────────┐
+      ↓                     ↓                      ↓
+┌─────────────┐      ┌─────────────┐       ┌─────────────┐
+│   Product   │      │    Cart     │       │    Order    │
+│   Service   │      │   Service   │       │   Service   │
+└──────┬──────┘      └──────┬──────┘       └──────┬──────┘
+       ↓                    ↓                     ↓
+┌─────────────┐      ┌─────────────┐       ┌─────────────┐
+│  Product DB │      │  Redis / DB │       │   Order DB  │
+└─────────────┘      └─────────────┘       └─────────────┘
+       │
+       ↓
+┌─────────────┐
+│Search Index │
+└─────────────┘
 
-Then explain the checkout flow.
+                     ┌─────────────┐
+                     │    Kafka    │
+                     └──────┬──────┘
+                            │
+             ┌──────────────┼──────────────┐
+             ↓              ↓              ↓
+        Inventory       Payment       Notification
+         Service        Service          Service
+             ↓              ↓
+       Inventory DB   Payment Provider
+```
 
-19. Checkout flow
-This is where you can demonstrate senior-level thinking.
+ Then explain the **checkout flow**.
 
-Step 1
-Customer clicks:
+---
 
-Checkout
+ # Checkout Flow
 
-Step 2
-Order Service creates:
+ This is where you can demonstrate senior-level thinking.
 
+ ## Step 1 — Customer clicks Checkout
+
+ ## Step 2 — Order Service creates
+
+```
 Order = PENDING
+```
 
-Step 3
-Reserve inventory:
+ ## Step 3 — Reserve inventory
 
+```
 Inventory Service
        ↓
 Reserve items
+```
 
-Step 4
-Payment authorization:
+ ## Step 4 — Payment authorization
 
+```
 Payment Service
        ↓
 Payment Provider
+```
 
-Step 5
-If payment succeeds:
+ ## Step 5 — If payment succeeds
 
+```
 Order = CONFIRMED
+```
 
-Then publish:
+ Then publish:
 
+```
 OrderConfirmed
+```
 
-Step 6
-Consumers process independently:
+ ## Step 6 — Consumers process independently
 
-OrderConfirmed
-      │
-      ├── Notification Service
-      ├── Delivery Service
-      ├── Analytics
-      └── Loyalty Service
+```
+                 OrderConfirmed
+                       │
+          ┌────────────┼────────────┐
+          ↓            ↓            ↓
+   Notification     Delivery     Analytics
+      Service        Service
+          │
+          ↓
+      Loyalty
+      Service
+```
 
-This is where asynchronous architecture shines.
+ This is where asynchronous architecture shines.
 
-20. Failure scenarios
-The interviewer may deliberately challenge your design.
+---
 
-"Payment service is down."
-Answer:
+ # Failure Scenarios
 
-Use timeout and retry with exponential backoff. Don't retry indefinitely. The order remains in a pending state, and asynchronous processing can retry later. If the operation cannot succeed after configured retries, publish the failure event and compensate the inventory reservation.
+ The interviewer may deliberately challenge your design.
 
-"Kafka is down."
-You could say:
+ ## "Payment Service is down."
 
-The producer should use durable delivery semantics and appropriate acknowledgements. Depending on business requirements, the service can temporarily reject/defer operations or use an outbox pattern so that database state and event publication aren't lost.
+ Answer:
 
-"Message is processed twice."
-Answer:
+ > "Use timeout and retry with exponential backoff. Don't retry indefinitely. The order remains in a pending state, and asynchronous processing can retry later. If the operation cannot succeed after configured retries, publish the failure event and compensate the inventory reservation."
 
-Consumers must be idempotent. I would store a unique event/message ID or use a business idempotency key and ensure duplicate processing doesn't change the final state.
+---
 
-"Database is down."
-Answer:
+ ## "Kafka is down."
 
-Use multiple instances/replicas where appropriate, connection timeouts, retry only for transient failures, health checks and failover. The service should degrade gracefully rather than continuously hammering the database.
+ You could say:
 
-21. Outbox pattern
-Learn this before your interview.
+ > "The producer should use durable delivery semantics and appropriate acknowledgements. Depending on business requirements, the service can temporarily reject or defer operations, or use an outbox pattern so that database state and event publication aren't lost."
 
-Problem:
+---
 
+ ## "Message is processed twice."
+
+ Answer:
+
+ > "Consumers must be idempotent. I would store a unique event/message ID or use a business idempotency key and ensure duplicate processing doesn't change the final state."
+
+---
+
+ ## "Database is down."
+
+ Answer:
+
+ > "Use multiple instances or replicas where appropriate, connection timeouts, retry only for transient failures, health checks and failover. The service should degrade gracefully rather than continuously hammering the database."
+
+---
+
+ # Outbox Pattern
+
+ **Learn this before your interview.**
+
+ Problem:
+
+```
 Order DB
    ↓
 Save order
@@ -967,177 +1137,222 @@ Save order
 Kafka
    ↓
 Publish OrderCreated
+```
 
-What if:
+ What if:
 
+```
 DB save → SUCCESS
 Kafka publish → FAILURE
+```
 
-Now the order exists but nobody receives the event.
+ Now the order exists but nobody receives the event.
 
-With an outbox:
+ ## With an Outbox
 
-Transaction
-   │
-   ├── Order table
-   │
-   └── Outbox table
+```
+             Transaction
+                  │
+          ┌───────┴────────┐
+          ↓                ↓
+     Order Table      Outbox Table
+          │                │
+          └───────┬────────┘
+                  ↓
+              Publisher
+                  ↓
+                Kafka
+```
 
-Both are written in the same DB transaction.
+ Both the Order and Outbox records are written in the **same DB transaction**.
 
-Then:
+ Then:
 
+```
 Outbox
    ↓
 Publisher
    ↓
 Kafka
+```
 
-This provides much stronger reliability.
+ A very good interview phrase:
 
-A very good interview phrase:
+ > "For reliable database-to-event publication, I would consider the transactional outbox pattern rather than trying to atomically commit a database transaction and a Kafka publish."
 
-"For reliable database-to-event publication, I would consider the transactional outbox pattern rather than trying to atomically commit a database transaction and a Kafka publish."
+---
 
-22. CAP theorem
-Know the basic explanation.
+ # CAP Theorem
 
-In a distributed system, during a network partition, you generally have to choose between:
+ Know the basic explanation.
 
-Consistency
-Availability
+ In a distributed system, during a network partition, you generally have to choose between:
 
-Partition tolerance is effectively required for distributed systems.
+ - **Consistency**
+- **Availability**
 
-Don't overcomplicate it.
+ Partition tolerance is effectively required for distributed systems.
 
-For example:
+ Don't overcomplicate it.
 
+ For example:
+
+```
 Inventory
-→ stronger consistency
+→ Stronger consistency
 
 Product catalog
-→ can tolerate eventual consistency
+→ Can tolerate eventual consistency
+```
 
-23. Common system-design questions to practice tonight
-I recommend practicing these in this order:
+---
 
-Priority 1
-Design an e-commerce/grocery system
+ # Common System-Design Questions to Practice Tonight
 
-Design an order management system
+ ## Priority 1
 
-Design a payment system
+ Practice:
 
-Design a food delivery system
+ 1. Design an e-commerce/grocery system.
+2. Design an order management system.
+3. Design a payment system.
+4. Design a food delivery system.
+5. Design a notification system.
 
-Design a notification system
+ ## Priority 2
 
-Priority 2
-Design a URL shortener.
+ Practice:
 
-Design a rate limiter.
+ 1. Design a URL shortener.
+2. Design a rate limiter.
+3. Design a file storage system.
+4. Design a ride-booking system.
+5. Design a chat system.
 
-Design a file storage system.
+ ## Microservices-Specific
 
-Design a ride-booking system.
+ Practice:
 
-Design a chat system.
+ 1. Design an event-driven architecture.
+2. Design a Kafka-based order processing system.
+3. Design a distributed job-processing system.
+4. Design an inventory management system.
+5. Design a delivery-slot booking system.
 
-Microservices-specific
-Design an event-driven architecture.
+ For Tesco, spend more time on **e-commerce, order, inventory and event-driven designs** than on something like YouTube.
 
-Design a Kafka-based order processing system.
+---
 
-Design a distributed job processing system.
+ # Questions the Interviewer May Ask After Your Design
 
-Design an inventory management system.
+ Be ready for these.
 
-Design a delivery-slot booking system.
+ ## Architecture
 
-For Tesco, I would spend much more time on e-commerce/order/inventory/event-driven designs than on something like YouTube.
+ - Why microservices?
+- Why not a monolith?
+- Why Kafka?
+- Why REST instead of gRPC?
+- Why synchronous here?
+- Why asynchronous there?
 
-24. Questions the interviewer may ask after your design
-Be ready for these:
+ ## Database
 
-Architecture
-Why microservices?
+ - Why SQL?
+- Why NoSQL?
+- How do you scale the database?
+- How do you handle transactions?
+- How do you prevent duplicate orders?
 
-Why not a monolith?
+ ## Reliability
 
-Why Kafka?
+ - What happens if Kafka goes down?
+- What happens if Payment fails?
+- What happens if Inventory fails?
+- What happens if a message is duplicated?
+- What happens if a consumer crashes?
 
-Why REST instead of gRPC?
+ ## Scalability
 
-Why synchronous here?
+ - What happens at 10x traffic?
+- Where is the bottleneck?
+- How would you scale the service?
+- How would you handle a huge product sale?
 
-Why asynchronous there?
+ ## Consistency
 
-Database
-Why SQL?
+ - Is this strongly consistent?
+- Where can eventual consistency be used?
+- How do you prevent overselling?
 
-Why NoSQL?
+ ## Operations
 
-How do you scale the database?
+ - How do you monitor it?
+- How do you debug a failed order?
+- How do you deploy a new version?
+- How do you roll back?
 
-How do you handle transactions?
+---
 
-How do you prevent duplicate orders?
+ # The Strong Answer Structure
 
-Reliability
-What happens if Kafka goes down?
+ When they give you a problem, use this exact sequence:
 
-What happens if Payment fails?
-
-What happens if Inventory fails?
-
-What happens if a message is duplicated?
-
-What happens if a consumer crashes?
-
-Scalability
-What happens at 10x traffic?
-
-Where is the bottleneck?
-
-How would you scale the service?
-
-How would you handle a huge product sale?
-
-Consistency
-Is this strongly consistent?
-
-Where can eventual consistency be used?
-
-How do you prevent overselling?
-
-Operations
-How do you monitor it?
-
-How do you debug a failed order?
-
-How do you deploy a new version?
-
-How do you roll back?
-
-25. A very strong answer structure
-When they give you a problem, use this exact sequence:
-
+```
 1. Requirements
-        ↓
+       ↓
 2. Scale estimation
-        ↓
+       ↓
 3. APIs
-        ↓
+       ↓
 4. High-level architecture
-        ↓
-5. Database/storage
-        ↓
+       ↓
+5. Database / storage
+       ↓
 6. Detailed critical flow
-        ↓
+       ↓
 7. Async communication
-        ↓
-8. Scal
+       ↓
+8. Scalability
+       ↓
+9. Resilience / failure handling
+       ↓
+10. Consistency / transactions
+       ↓
+11. Observability
+       ↓
+12. Security
+       ↓
+13. Trade-offs
+```
+
+ ## The Mental Checklist
+
+ Before finishing your answer, quickly ask yourself:
+
+```
+Requirements?          ✓
+Scale?                 ✓
+APIs?                  ✓
+Architecture?          ✓
+Database?              ✓
+Caching?               ✓
+Sync vs async?         ✓
+Kafka/events?          ✓
+Consistency?           ✓
+Transactions/Saga?     ✓
+Failure handling?      ✓
+Idempotency?           ✓
+Observability?         ✓
+Security?              ✓
+Trade-offs?            ✓
+```
+
+ **The goal isn't to draw the most complicated architecture.**
+
+ The goal is to show that you can **make sensible engineering decisions, explain why you made them, identify failure modes, and evolve the design as requirements and scale change.**
+
+ If you want, I can also turn this into a **1-page Tesco system-design cheat sheet** that you can quickly revise before the interview.
 
 ---
 ---
