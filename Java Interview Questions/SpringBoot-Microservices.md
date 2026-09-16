@@ -7364,3 +7364,24 @@ Create:
 | Monitoring                 | Logs, metrics, traces, health checks, and alerts                         |
 | Distributed tracing        | Propagate trace context and connect spans across services                |
 | Production troubleshooting | Metrics → trace → logs → dependencies → mitigation → root cause          |
+
+---
+---
+
+### Scenario-Based Questions
+
+**Scenario:** One microservice is down. Other services depend on it.
+
+* What happens?
+* How do you prevent cascading failures?
+* Would you use Circuit Breaker?
+* Would you use Retry?
+* When would you use Timeout?
+* When would you use Bulkhead?
+* What fallback mechanism would you implement?
+
+
+
+
+
+
