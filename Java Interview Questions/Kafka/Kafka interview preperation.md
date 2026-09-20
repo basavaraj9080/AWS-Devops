@@ -3067,3 +3067,2033 @@ spring:
 This will keep your answers compatible with **Spring Boot 3.5.x and the Spring Kafka version managed by that Boot line**, rather than accidentally introducing APIs or behavior specific to Boot 4.x. Spring Boot's dependency management controls the Kafka/Spring Kafka versions unless you explicitly override them.  Home
 
  For the next sections, I would structure **every question in exactly this format: _Interview Answer → Deep Explanation → Professional Architecture Diagram → Real-Time Example → Spring Boot 3.5 Production Configuration → Common Follow-up Question → 30-second answer to memorize_.**
+
+
+---
+---
+---
+
+# 11\. Kafka Advanced / Production — Spring Boot 3.5.x+
+
+ For your **9 years of Java + Spring Boot + Microservices + Kafka experience**, these are the questions where the interviewer will usually move from **"Do you know Kafka?"** to **"Have you actually designed and operated Kafka in production?"**
+
+ I would answer them using:
+
+ > **Concept → Production design → Diagram → Spring Boot configuration → Failure/troubleshooting angle**
+
+ The examples below use **Spring Boot 3.5.x** and Spring Kafka managed by that Boot line. Spring Boot 3.5 provides Kafka auto-configuration, `KafkaTemplate`, listener configuration, retry-topic support, SSL configuration, transactions, and Kafka metrics integration.  Home+1
+
+---
+
+ # 1\. How do you tune Kafka for high throughput?
+
+ This is one of the most important questions.
+
+ Don't answer:
+
+ > "Increase batch size."
+
+ A senior answer should cover **producer + broker + partitions + consumers + network + compression**.
+
+ ## Production architecture
+
+```
+                         HIGH THROUGHPUT PIPELINE
+
+ ┌──────────────┐
+ │ Applications │
+ └──────┬───────┘
+        │
+        │ async send
+        ▼
+ ┌─────────────────┐
+ │ Kafka Producer  │
+ │                 │
+ │ batching        │
+ │ compression     │
+ │ async I/O       │
+ └────────┬────────┘
+          │
+          ▼
+ ┌─────────────────────────────────────────────┐
+ │                KAFKA CLUSTER                │
+ │                                             │
+ │ Broker 1       Broker 2       Broker 3      │
+ │    │              │              │          │
+ │   P0             P1             P2           │
+ │   P3             P4             P5           │
+ │                                             │
+ └──────────────────────┬──────────────────────┘
+                        │
+                 parallel reads
+                        │
+          ┌─────────────┼─────────────┐
+          ▼             ▼             ▼
+        C1/C2         C3/C4         C5/C6
+          │             │             │
+          └─────────────┼─────────────┘
+                        ▼
+                 Business Systems
+```
+
+ ## Producer tuning
+
+ Typical baseline:
+
+```
+spring:
+  kafka:
+    producer:
+      acks: all
+      compression-type: zstd
+      batch-size: 65536
+      buffer-memory: 67108864
+
+      properties:
+        enable.idempotence: true
+        linger.ms: 5
+        delivery.timeout.ms: 120000
+```
+
+ Spring Boot 3.5 exposes producer properties including `acks`, `batch-size`, `buffer-memory`, `compression-type`, and arbitrary producer properties.  Home
+
+ ### What each does
+
+```
+batch.size
+     ↓
+More records per request
+     ↓
+Fewer network requests
+     ↓
+Higher throughput
+
+linger.ms
+     ↓
+Small waiting window
+     ↓
+Better batch utilization
+
+compression=zstd
+     ↓
+Smaller payload
+     ↓
+Less network bandwidth
+```
+
+ But don't blindly increase everything.
+
+ For example:
+
+```
+batch.size = 1 MB
+linger.ms  = 100 ms
+```
+
+ could increase latency and memory consumption without improving throughput if the application doesn't generate enough traffic.
+
+ ### Broker side
+
+ You also need:
+
+ - Enough partitions
+- Adequate broker CPU
+- Adequate disk throughput
+- Adequate network bandwidth
+- Appropriate replication factor
+- Monitoring of request latency
+- Avoiding hot partitions
+
+ ### Consumer side
+
+ Increase parallelism using:
+
+```
+Partitions >= Consumer parallelism
+```
+
+ For example:
+
+```
+12 partitions
+
+Consumer group:
+C1 → P0 P1 P2
+C2 → P3 P4 P5
+C3 → P6 P7 P8
+C4 → P9 P10 P11
+```
+
+ ### Interview answer
+
+ > "For high throughput, I tune the entire pipeline rather than one Kafka property. On the producer I use asynchronous sends, batching, compression and appropriate buffer memory. At the Kafka level I make sure partition count and broker resources can support the traffic. On the consumer side I scale consumers up to the available partition parallelism and remove downstream bottlenecks such as slow databases or APIs."
+
+---
+
+ # 2\. How do you decide the number of partitions?
+
+ This is a **very good senior-level question**.
+
+ There is no universal formula like:
+
+```
+1 partition = 10,000 messages/sec
+```
+
+ because it depends on:
+
+ - Message size
+- Producer throughput
+- Consumer throughput
+- Number of consumers
+- Ordering requirements
+- Broker capacity
+- Network
+- Expected future growth
+
+ ## Think about two dimensions
+
+```
+                 PARTITIONS
+
+             ┌──────────────┐
+             │              │
+             ▼              ▼
+         Throughput      Parallelism
+             │              │
+             ▼              ▼
+        Producer/Broker   Consumers
+```
+
+ ### Example
+
+ Suppose:
+
+```
+Expected traffic = 1 million messages/sec
+Average message = 1 KB
+```
+
+ Don't immediately say:
+
+```
+100 partitions
+```
+
+ Instead benchmark:
+
+```
+1 partition → X msg/sec
+4 partitions → Y msg/sec
+8 partitions → Z msg/sec
+16 partitions → ...
+```
+
+ Then consider consumer requirements.
+
+ If you need 20 consumer instances processing in parallel, you need enough partitions to support that parallelism.
+
+ ### Important consideration
+
+ Partitions are relatively easy to add, but **you should not treat partition count as something you casually change later**.
+
+ Increasing partitions can affect:
+
+ - Ordering/key distribution
+- Consumer assignment
+- File descriptors/resources
+- Recovery/rebalancing
+- Operational complexity
+- Key-to-partition mapping
+
+ ### Interview answer
+
+ > "I decide partition count from both throughput and consumer parallelism requirements, then validate it through load testing. I also leave enough headroom for expected growth, while avoiding unnecessarily high partition counts because partitions have operational and resource costs."
+
+---
+
+ # 3\. What is the impact of increasing partitions?
+
+ ### Advantages
+
+```
+More partitions
+      ↓
+More parallelism
+      ↓
+Higher potential throughput
+```
+
+ For consumers:
+
+```
+6 partitions
+3 consumers
+
+C1 → P0 P1
+C2 → P2 P3
+C3 → P4 P5
+```
+
+ ### Disadvantages
+
+ More partitions can mean:
+
+ - More files/log segments
+- More metadata
+- More leader/follower management
+- More consumer assignment work
+- More possible rebalances
+- More replication traffic
+- More operational overhead
+
+ ### Important ordering impact
+
+ Suppose you have:
+
+```
+orderId = 101
+```
+
+ With 3 partitions:
+
+```
+101 → P0
+```
+
+ If you increase partitions to 6, the partitioning mapping can change for keyed records.
+
+ Therefore, partition changes should be considered carefully where strict historical ordering is important.
+
+---
+
+ # 4\. How do you handle millions of messages per second?
+
+ I would explain this as a **capacity architecture**, not a configuration property.
+
+```
+                         MILLIONS MSG/SEC
+
+                  ┌─────────────────────┐
+                  │ Multiple Producers  │
+                  └──────────┬──────────┘
+                             │
+                      Async + Batch
+                             │
+                             ▼
+        ┌────────────────────────────────────────┐
+        │              Kafka Cluster             │
+        │                                        │
+        │ B1      B2      B3      B4      B5     │
+        │ │       │       │       │       │      │
+        │ P0-P9  P10-P19 P20-P29 P30-P39 P40-P49│
+        └──────────────────┬─────────────────────┘
+                           │
+                     Consumer Groups
+                           │
+             ┌─────────────┼─────────────┐
+             ▼             ▼             ▼
+          Group A       Group B       Group C
+          Payment       Analytics     Search
+```
+
+ I would focus on:
+
+ ### Producer
+
+ - Async sends
+- Batching
+- Compression
+- Appropriate `linger.ms`
+- Sufficient buffer memory
+- Avoid blocking on every `send()`
+
+ ### Kafka
+
+ - Horizontal brokers
+- Sufficient partitions
+- Adequate network
+- Adequate disk throughput
+- Replication capacity
+
+ ### Consumers
+
+ - Consumer group scaling
+- Partition parallelism
+- Batch processing
+- Efficient downstream access
+- Avoid synchronous external calls where possible
+
+ ### Architecture
+
+ If one consumer does:
+
+```
+Kafka
+ ↓
+REST API
+ ↓
+DB
+```
+
+ for every message, Kafka may not be your bottleneck.
+
+ The downstream service may be.
+
+---
+
+ # 5\. How do you handle backpressure?
+
+ Backpressure means:
+
+ > Producer/consumer input is arriving faster than downstream processing can handle.
+
+ Example:
+
+```
+Kafka
+  │
+  │ 100K msg/sec
+  ▼
+Consumer
+  │
+  │ 20K msg/sec
+  ▼
+Database
+```
+
+ Then:
+
+```
+Incoming rate > Processing rate
+                ↓
+              Lag ↑
+```
+
+ ## Production strategy
+
+```
+                  Kafka
+                    │
+                    ▼
+               Consumer
+                    │
+             ┌──────┴──────┐
+             │             │
+        Processing      Buffer
+             │             │
+             ▼             ▼
+          Database      controlled
+                         retry
+```
+
+ Kafka itself provides durable buffering, so you don't necessarily need to process every message immediately.
+
+ ### Techniques
+
+ - Increase consumer parallelism
+- Increase partitions if appropriate
+- Batch database operations
+- Tune consumer fetch/poll settings
+- Reduce downstream latency
+- Rate-limit downstream calls
+- Use retry/DLT appropriately
+- Apply application-level concurrency limits
+- Scale the downstream system
+
+ ### Important point
+
+ Don't blindly increase consumers.
+
+ If the database can only handle:
+
+```
+20K/sec
+```
+
+ and you create 100 consumers:
+
+```
+100 consumers
+      ↓
+Database
+      ↓
+overload
+      ↓
+timeouts
+      ↓
+retries
+      ↓
+even more load
+```
+
+ This is a **retry storm**.
+
+---
+
+ # 6\. How do you handle slow consumers?
+
+ First identify _why_ they're slow.
+
+```
+                   Consumer Slow
+                         │
+       ┌─────────────────┼─────────────────┐
+       ▼                 ▼                 ▼
+   CPU/GC             DB/API          Partition skew
+       │                 │                 │
+       ▼                 ▼                 ▼
+ Optimize            Optimize          Rebalance/
+ code                dependency        key distribution
+```
+
+ ### Typical solutions
+
+ If CPU-bound:
+
+```
+increase consumer instances
+```
+
+ If database-bound:
+
+```
+batch DB writes
+optimize queries
+connection pool
+indexes
+```
+
+ If external API-bound:
+
+```
+async calls
+connection pooling
+rate limiting
+bulk APIs
+```
+
+ If partition skew:
+
+```
+review message key
+```
+
+ If insufficient partitions:
+
+```
+increase partition capacity
+```
+
+ ### Senior interview answer
+
+ > "I first identify the bottleneck rather than immediately scaling consumers. Consumer lag can be caused by CPU, GC, downstream dependencies, hot partitions, insufficient partitions, or rebalances."
+
+---
+
+ # 7\. How do you monitor Kafka in production?
+
+ I monitor at **four levels**.
+
+```
+                 KAFKA OBSERVABILITY
+
+                         │
+       ┌─────────────────┼─────────────────┐
+       │                 │                 │
+       ▼                 ▼                 ▼
+    Broker            Producer          Consumer
+       │                 │                 │
+       ▼                 ▼                 ▼
+    Cluster            Send            Lag
+    Health             Errors          Rebalance
+    ISR                 Latency         Processing
+    Disk                Throughput      Errors
+       │
+       └─────────────────┬─────────────────┘
+                         ▼
+                    Infrastructure
+                         │
+                    CPU / Memory
+                    Disk / Network
+```
+
+ Spring Boot 3.5 has Kafka metrics integration through Micrometer/Actuator infrastructure, including Kafka metrics auto-configuration.  Home
+
+ Typical stack:
+
+```
+Spring Boot Actuator
+        │
+        ▼
+     Micrometer
+        │
+        ▼
+   Prometheus
+        │
+        ▼
+    Grafana
+```
+
+---
+
+ # 8\. What metrics do you monitor?
+
+ This is another question where a senior candidate should categorize metrics.
+
+ ## Producer
+
+ Monitor:
+
+ - Record send rate
+- Record error rate
+- Request latency
+- Request rate
+- Batch size
+- Compression rate
+- Buffer availability
+- Record queue time
+- Retry rate
+
+ ## Consumer
+
+ Monitor:
+
+ - Consumer lag
+- Records consumed rate
+- Poll latency
+- Processing latency
+- Error rate
+- Rebalance count
+- Commit latency
+- Consumer group state
+
+ ## Broker
+
+ Monitor:
+
+ - CPU
+- Memory
+- Disk usage
+- Disk I/O
+- Network throughput
+- Request latency
+- Under-replicated partitions
+- Offline partitions
+- ISR changes
+- Controller/KRaft health
+
+ ## Business metrics
+
+ Don't forget:
+
+```
+orders-created
+payments-processed
+orders-failed
+DLT-count
+```
+
+ Because:
+
+ > Infrastructure can be healthy while the business is broken.
+
+---
+
+ # 9\. How do you troubleshoot consumer lag?
+
+ Use this interview flow:
+
+```
+                    HIGH LAG
+                       │
+                       ▼
+             Is producer traffic ↑?
+                 /             \
+               YES              NO
+                │                │
+                ▼                ▼
+          Capacity issue     Consumer slow?
+                                  │
+                        ┌─────────┼─────────┐
+                        ▼         ▼         ▼
+                       CPU       DB/API    Partition
+                       GC        latency    skew
+                        │         │         │
+                        └─────────┼─────────┘
+                                  ▼
+                              Fix bottleneck
+```
+
+ ### Check in this order
+
+ 1. Producer throughput
+2. Consumer throughput
+3. Partition-level lag
+4. Consumer CPU/GC
+5. Processing latency
+6. DB/API latency
+7. Consumer rebalances
+8. Partition/key skew
+9. Number of consumers vs partitions
+10. Poll-related configuration
+
+ Spring Boot 3.5 exposes consumer properties such as `max-poll-records`, `max-poll-interval`, `fetch-min-size`, and `fetch-max-wait` through `spring.kafka.consumer.*`.  Home
+
+---
+
+ # 10\. How do you handle under-replicated partitions?
+
+ **Under-replicated partitions (URP)** means the number of replicas currently in sync is less than the configured replication factor.
+
+ Example:
+
+```
+Replication Factor = 3
+
+Partition P0
+
+Broker 1 → Leader ✓
+Broker 2 → ISR     ✓
+Broker 3 → offline ❌
+
+ISR = 2
+Expected = 3
+
+URP = 1
+```
+
+ ## What would I check?
+
+```
+URP
+ │
+ ├── Broker down?
+ │
+ ├── Disk problem?
+ │
+ ├── Network problem?
+ │
+ ├── Broker overloaded?
+ │
+ ├── Replication throughput?
+ │
+ └── Recovery/catch-up?
+```
+
+ Don't immediately restart everything.
+
+ ### Production response
+
+ 1. Identify affected broker
+2. Check broker health
+3. Check disk
+4. Check network
+5. Check replication traffic
+6. Check controller/KRaft logs
+7. Restore broker capacity
+8. Verify ISR recovery
+9. Check whether data loss risk exists
+
+ Kafka replication is the basis for automatic failover when a broker fails.  Apache Kafka
+
+---
+
+ # 11\. How do you design Kafka for high availability?
+
+ A basic HA design:
+
+```
+                         APPLICATIONS
+                              │
+                    ┌─────────┴─────────┐
+                    ▼                   ▼
+                 Producer            Consumer
+                    │                   │
+                    └─────────┬─────────┘
+                              ▼
+             ┌────────────────────────────────┐
+             │          Kafka Cluster         │
+             │                                │
+             │  Broker 1  Broker 2  Broker 3 │
+             │     │         │         │      │
+             │     └────┬────┴────┬────┘      │
+             │          │         │            │
+             │       Replicated Partitions    │
+             └────────────────────────────────┘
+```
+
+ Production principles:
+
+ # 9\. How do you troubleshoot consumer lag?
+
+   ### Check in this order
+
+ 1. Producer throughput
+2. Consumer throughput
+3. Partition-level lag
+4. Consumer CPU/GC
+5. Processing latency
+6. DB/API latency
+7. Consumer rebalances
+8. Partition/key skew
+9. Number of consumers vs partitions
+10. Poll-related configuration
+
+ Spring Boot 3.5 exposes consumer properties such as `max-poll-records`, `max-poll-interval`, `fetch-min-size`, and `fetch-max-wait` through `spring.kafka.consumer.*`.
+
+---
+
+ # 10\. How do you handle under-replicated partitions?
+
+   ## What would I check?
+
+```
+URP
+ │
+ ├── Broker down?
+ │
+ ├── Disk problem?
+ │
+ ├── Network problem?
+ │
+ ├── Broker overloaded?
+ │
+ ├── Replication throughput?
+ │
+ └── Recovery/catch-up?
+```
+
+ Don't immediately restart everything.
+
+ ### Production response
+
+ 1. Identify affected broker
+2. Check broker health
+3. Check disk
+4. Check network
+5. Check replication traffic
+6. Check controller/KRaft logs
+7. Restore broker capacity
+8. Verify ISR recovery
+9. Check whether data loss risk exists
+
+ Kafka replication is the basis for automatic failover when a broker fails.
+
+---
+
+ # 11\. How do you design Kafka for high availability?
+
+   Production principles:
+
+ - Multiple brokers
+- Replication factor \> 1
+- Appropriate `min.insync.replicas`
+- `acks=all`
+- Spread brokers across failure domains
+- Monitor URP/offline partitions
+- Persistent storage
+- Capacity headroom
+- Avoid single points of failure
+
+ Example:
+
+```
+RF = 3
+min.insync.replicas = 2
+acks = all
+```
+
+ The combination provides a useful durability/availability baseline, but the exact values depend on your availability and durability requirements.
+
+---
+
+ # 12\. How do you design Kafka for multi-region deployment?
+
+ This is a very common architect-level question.
+
+ I would distinguish:
+
+```
+Same region
+     vs
+Cross region
+```
+
+ A common design:
+
+```
+                   REGION A
+              ┌────────────────┐
+              │ Kafka Cluster A │
+              └───────┬────────┘
+                      │
+                Replication
+                      │
+                      ▼
+              ┌────────────────┐
+              │ Kafka Cluster B │
+              └───────┬────────┘
+                   REGION B
+```
+
+ Kafka's geo-replication tooling can replicate topics, configurations, consumer groups/offsets and ACLs between clusters. Kafka documents MirrorMaker-based cross-cluster replication separately from normal intra-cluster replication.  Apache Kafka
+
+ ## Common strategies
+
+ ### Active-passive
+
+```
+Region A
+   │
+Primary
+   │
+   └────replicate────► Region B
+                         │
+                       DR
+```
+
+ Used when Region B primarily serves disaster recovery.
+
+ ### Active-active
+
+```
+          Region A
+          Kafka A
+             ▲
+             │
+        replication
+             │
+             ▼
+          Kafka B
+          Region B
+```
+
+ Both regions serve traffic.
+
+ But active-active introduces complexity around:
+
+ - Duplicate events
+- Data ownership
+- Ordering
+- Conflict resolution
+- Consumer offsets
+- Failover
+- Network partition
+
+ ### Interview answer
+
+---
+
+ # 12\. How do you design Kafka for multi-region deployment?
+
+ This is a very common architect-level question.
+
+```
+Same region
+     vs
+Cross region
+```
+
+ A common design:
+
+```
+                   REGION A
+              ┌────────────────┐
+              │ Kafka Cluster A │
+              └───────┬────────┘
+                      │
+                Replication
+                      │
+                      ▼
+              ┌────────────────┐
+              │ Kafka Cluster B │
+              └───────┬────────┘
+                   REGION B
+```
+
+ Kafka's geo-replication tooling can replicate topics, configurations, consumer groups/offsets and ACLs between clusters. Kafka documents MirrorMaker-based cross-cluster replication separately from normal intra-cluster replication.
+
+ ## Common strategies
+
+ ### Active-passive
+
+   ### Active-active
+
+  Both regions serve traffic.
+
+ But active-active introduces complexity around:
+
+ - Duplicate events
+- Data ownership
+- Ordering
+- Conflict resolution
+- Consumer offsets
+- Failover
+- Network partition
+
+ ### Interview answer
+
+ > "For multi-region Kafka, I first decide whether the requirement is disaster recovery or active-active processing. For DR, active-passive replication is simpler. Active-active gives higher regional availability but introduces significant complexity around ownership, duplicates, ordering and failover."
+
+---
+
+ # 13\. How do you handle schema evolution?
+
+ Never casually change an event contract.
+
+ Bad:
+
+```
+{
+  "id": 101,
+  "name": "John"
+}
+```
+
+ and suddenly:
+
+```
+{
+  "customerId": 101,
+  "fullName": "John",
+  "address": {...}
+}
+```
+
+ Consumers may break.
+
+ ## Better approach
+
+```
+Producer v1
+     │
+     ▼
+Schema Registry
+     │
+     ▼
+Kafka
+     │
+     ├──── Consumer v1
+     └──── Consumer v2
+```
+
+ Use compatible schema changes.
+
+ For example, adding an optional field:
+
+```
+{
+  "id": 101,
+  "name": "John",
+  "email": null
+}
+```
+
+ Existing consumers can continue working.
+
+---
+
+ # 14\. What is Schema Registry?
+
+ Schema Registry is a centralized service for storing and managing event schemas.
+
+ Important interview correction:
+
+ > **Kafka itself does not include a Schema Registry.**
+
+ Kafka's own documentation explicitly notes that Kafka does not include a schema registry; third-party implementations can provide schema management and compatibility functionality.  Apache Kafka
+
+ Architecture:
+
+```
+                 Producer
+                    │
+                    │ schema
+                    ▼
+            ┌────────────────┐
+            │ Schema Registry│
+            └───────┬────────┘
+                    │
+                    │ validated schema
+                    ▼
+                 Kafka
+                    │
+                    ▼
+                Consumer
+                    │
+                    ▼
+            Schema Registry
+```
+
+ Typical technologies:
+
+ - Avro
+- Protobuf
+- JSON Schema
+
+ The registry can maintain schema versions and compatibility rules.
+
+---
+
+ # 15\. What is Avro?
+
+ Avro is a schema-based serialization format.
+
+ Instead of sending verbose JSON:
+
+```
+{
+  "orderId": 1001,
+  "customerId": 5001,
+  "amount": 2500
+}
+```
+
+ Avro serializes data using a schema.
+
+ Conceptually:
+
+```
+              Avro Schema
+                   │
+                   ▼
+Producer ───────► Serializer
+                   │
+                   ▼
+                 Bytes
+                   │
+                   ▼
+                 Kafka
+                   │
+                   ▼
+               Consumer
+                   │
+                   ▼
+              Deserializer
+                   │
+                   ▼
+              Java Object
+```
+
+ Advantages:
+
+ - Compact binary format
+- Strong schema
+- Schema evolution
+- Good interoperability
+- Less payload overhead than verbose JSON in many cases
+
+---
+
+ # 16\. What is backward compatibility?
+
+ Backward compatibility means:
+
+ > **New schema can read data written using the old schema.**
+
+ Example:
+
+```
+Schema V1
+
+id
+name
+```
+
+ V2:
+
+```
+id
+name
+email (optional)
+```
+
+ New consumer:
+
+```
+V2 Consumer
+     │
+     ▼
+Can read V1 data
+```
+
+ Think:
+
+```
+NEW CODE
+   ↓
+OLD DATA
+```
+
+ **Backward = new consumer reads old data.**
+
+---
+
+ # 17\. What is forward compatibility?
+
+ Forward compatibility means:
+
+ > **Old consumer can read data written using the new schema.**
+
+ Think:
+
+```
+OLD CODE
+   ↓
+NEW DATA
+```
+
+ Example:
+
+```
+Producer V2
+id
+name
+email
+       │
+       ▼
+Old Consumer V1
+id
+name
+```
+
+ This requires schema evolution rules that allow the old reader to ignore/handle the new field appropriately.
+
+ ### Memory trick
+
+```
+Backward:
+NEW → OLD
+
+Forward:
+OLD → NEW
+```
+
+---
+
+ # 18\. How do you secure Kafka?
+
+ Think in four layers:
+
+```
+                  KAFKA SECURITY
+
+                       │
+       ┌───────────────┼────────────────┐
+       ▼               ▼                ▼
+ Authentication   Encryption       Authorization
+       │               │                │
+       ▼               ▼                ▼
+      SASL             SSL             ACL
+```
+
+ And additionally:
+
+```
+Secrets Management
+Network isolation
+Certificate rotation
+Audit logging
+```
+
+ Typical production architecture:
+
+```
+Application
+     │
+     │ SASL
+     │ TLS
+     ▼
+┌────────────────────┐
+│ Kafka Broker       │
+│                    │
+│ Authentication     │
+│ Authorization      │
+│ Encryption         │
+└────────────────────┘
+```
+
+ Spring Boot 3.5 supports Kafka security properties for producers, consumers and the common Kafka configuration, including security protocol and SSL material.  Home
+
+---
+
+ # 19\. SSL vs SASL
+
+ This is easy to remember:
+
+ ### SSL/TLS
+
+ Primarily provides:
+
+```
+Encryption
++
+Certificate-based authentication
+```
+
+ Example:
+
+```
+Application
+    │
+    │ encrypted TLS connection
+    ▼
+Kafka
+```
+
+ ### SASL
+
+ Primarily provides:
+
+```
+Authentication
+```
+
+ Examples include mechanisms such as:
+
+```
+SASL/SCRAM
+SASL/OAUTHBEARER
+SASL/GSSAPI
+```
+
+ You can combine them.
+
+ For example:
+
+```
+SASL_SSL
+```
+
+ means:
+
+```
+SASL → authentication
+SSL  → encryption
+```
+
+ ### Interview answer
+
+ > "SSL/TLS protects the communication channel and can authenticate using certificates. SASL provides an authentication mechanism. In production I commonly use SASL over TLS, such as SASL\_SSL, depending on the organization's identity infrastructure."
+
+---
+
+ # 20\. What are Kafka ACLs?
+
+ ACL = **Access Control List**.
+
+ It defines:
+
+```
+WHO
+  +
+CAN DO WHAT
+  +
+ON WHICH RESOURCE
+```
+
+ Example:
+
+```
+Order Service
+     │
+     │ WRITE
+     ▼
+orders-topic
+
+Payment Service
+     │
+     │ READ
+     ▼
+orders-topic
+```
+
+ Conceptually:
+
+```
+Principal: order-service
+Operation: WRITE
+Resource: orders
+```
+
+ Kafka provides an authorization framework and ACLs can control operations against resources.  Apache Kafka
+
+ Typical permissions:
+
+ - READ
+- WRITE
+- CREATE
+- DELETE
+- DESCRIBE
+- ALTER
+
+ ### Production principle
+
+ Give each microservice only the permissions it requires.
+
+ Don't give:
+
+```
+order-service
+   ↓
+ALL Kafka permissions
+```
+
+ Prefer:
+
+```
+order-service
+   ↓
+WRITE orders
+
+payment-service
+   ↓
+READ orders
+WRITE payments
+```
+
+ That's **least privilege**.
+
+---
+
+ # 21\. What is Kafka Connect?
+
+ Kafka Connect is a framework for moving data between Kafka and external systems.
+
+ Architecture:
+
+```
+                     KAFKA CONNECT
+
+External System                    Kafka
+      │                              │
+      │                              │
+      ▼                              ▼
+┌──────────────┐              ┌──────────────┐
+│   Source     │─────────────►│              │
+│  Connector   │              │    Kafka     │
+└──────────────┘              │              │
+                              └──────────────┘
+                                     │
+                                     │
+                              ┌──────▼──────┐
+                              │    Sink     │
+                              │  Connector  │
+                              └──────┬──────┘
+                                     │
+                                     ▼
+                              External System
+```
+
+ Kafka Connect is useful when you don't want to write custom producer/consumer applications for every integration.
+
+---
+
+ # 22\. Source Connector vs Sink Connector
+
+ Easy memory trick:
+
+```
+SOURCE = into Kafka
+SINK   = out of Kafka
+```
+
+ ### Source
+
+```
+Database
+   │
+   ▼
+Source Connector
+   │
+   ▼
+Kafka
+```
+
+ Example:
+
+```
+MySQL → Debezium → Kafka
+```
+
+ ### Sink
+
+```
+Kafka
+  │
+  ▼
+Sink Connector
+  │
+  ▼
+Elasticsearch
+```
+
+ Example:
+
+```
+Kafka → Elasticsearch
+```
+
+---
+
+ # 23\. How do you integrate Kafka with a database?
+
+ There are multiple approaches.
+
+ ## Application-level integration
+
+```
+Kafka
+  │
+  ▼
+Spring Boot Consumer
+  │
+  ▼
+Service
+  │
+  ▼
+Database
+```
+
+ Useful when business logic is required.
+
+ ## CDC
+
+```
+Database
+    │
+    │ transaction log
+    ▼
+Debezium / CDC
+    │
+    ▼
+Kafka
+```
+
+ Useful for propagating database changes as events.
+
+ ## Kafka → DB
+
+```
+Kafka
+  │
+  ▼
+Kafka Connect Sink
+  │
+  ▼
+Database
+```
+
+ Useful for straightforward data movement.
+
+ ### Interview answer
+
+ > "If I need business logic while consuming, I use a Spring Kafka consumer. If I need database change events, I consider CDC such as Debezium. If the requirement is straightforward data movement, Kafka Connect can be more appropriate."
+
+---
+
+ # 24\. What is the Outbox Pattern?
+
+ This is **extremely important for microservices interviews**.
+
+ The problem is the **dual-write problem**.
+
+ Suppose:
+
+```
+Order Service
+
+DB transaction
+     +
+Kafka publish
+```
+
+ You can get:
+
+```
+DB commit ✓
+Kafka publish ❌
+```
+
+ Now your database says:
+
+```
+Order Created
+```
+
+ but Kafka doesn't contain:
+
+```
+OrderCreated event
+```
+
+ Or the opposite:
+
+```
+Kafka ✓
+DB ❌
+```
+
+ ## Outbox solution
+
+ Instead of:
+
+```
+DB
+ +
+Kafka
+```
+
+ do:
+
+```
+              SAME DB TRANSACTION
+         ┌───────────────────────────┐
+         │                           │
+         │ Orders table              │
+         │                           │
+         │ Outbox table              │
+         │                           │
+         └──────────────┬────────────┘
+                        │
+                        │ CDC
+                        ▼
+                  ┌───────────┐
+                  │   Kafka   │
+                  └───────────┘
+```
+
+ ### Transaction
+
+```
+BEGIN
+   |
+   ├── INSERT order
+   |
+   └── INSERT outbox_event
+   |
+COMMIT
+```
+
+ Now both database changes succeed or fail together.
+
+ Then CDC/outbox publisher reads:
+
+```
+outbox_event
+      │
+      ▼
+Kafka
+```
+
+ ### Real-time example
+
+ Customer places order:
+
+```
+Order API
+    │
+    ▼
+Order Service
+    │
+    ▼
+┌────────────────────────────┐
+│ Database Transaction       │
+│                            │
+│ orders                     │
+│   id=1001                  │
+│                            │
+│ outbox                     │
+│   OrderCreated / 1001      │
+└─────────────┬──────────────┘
+              │
+              ▼
+          CDC / Publisher
+              │
+              ▼
+            Kafka
+              │
+       ┌──────┴──────┐
+       ▼             ▼
+    Payment       Inventory
+```
+
+ ### Senior interview answer
+
+ > "I use the transactional outbox when a service must atomically persist business state and publish an event. It avoids the dual-write problem. The service writes both the business record and outbox event in one database transaction, and a CDC process or publisher later publishes the outbox event to Kafka."
+
+---
+
+ # 25\. Kafka vs RabbitMQ — when would you choose each?
+
+ Don't say:
+
+ > "Kafka is better."
+
+ The systems solve different problems.
+
+ ## Kafka
+
+ Think:
+
+```
+EVENT STREAM
+```
+
+ Strong when you need:
+
+ - Very high throughput
+- Durable event history
+- Replay
+- Multiple independent consumers
+- Event streaming
+- Large-scale distributed processing
+- Partition-based parallelism
+
+ - READ
+- WRITE
+- CREATE
+- DELETE
+- DESCRIBE
+- ALTER
+
+ ### Production principle
+
+ Give each microservice only the permissions it requires.
+
+ Don't give:
+
+ Architecture:
+
+```
+Producer
+   │
+   ▼
+ Kafka
+   │
+   ├── Consumer Group A
+   ├── Consumer Group B
+   ├── Consumer Group C
+   └── Consumer Group D
+```
+
+ ## RabbitMQ
+
+ Think:
+
+```
+MESSAGE BROKER
+```
+
+ Strong when you need:
+
+ - Traditional work queues
+- Routing patterns
+- Request/task style messaging
+- Fine-grained routing
+- Per-message acknowledgement semantics
+- Lower-volume asynchronous workloads
+
+ Architecture:
+
+```
+Producer
+   │
+   ▼
+ Exchange
+   │
+   ├── Queue A → Consumer
+   ├── Queue B → Consumer
+   └── Queue C → Consumer
+```
+
+ ### Interview comparison
+
+ | Requirement | Kafka | RabbitMQ |
+| --- | --- | --- |
+| Very high throughput | Strong fit | Can handle high throughput, architecture dependent |
+| Event replay | Strong | Not its primary model |
+| Long event retention | Strong | Not primary use case |
+| Consumer groups | Native concept | Different model |
+| Partition-based scaling | Yes | Different scaling model |
+| Complex routing | Less central | Strong |
+| Traditional work queue | Possible | Strong fit |
+| Event streaming | Strong | Possible, but not primary |
+| Multiple independent consumers | Strong | Strong, using queues/bindings |
+| Event history | Core concept | Not core concept |
+
+### Best interview answer
+
+ > "I choose Kafka when the requirement is an event-streaming platform with durable history, replay, high throughput and multiple independent consumers. I choose RabbitMQ when the primary requirement is a traditional message broker with sophisticated routing and work-queue semantics. The decision depends on the messaging pattern rather than simply throughput."
+
+---
+
+ # Production Kafka Configuration — Spring Boot 3.5.x
+
+ Here's the **baseline configuration I'd remember for interviews**.
+
+```
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+      acks: all
+      compression-type: zstd
+      batch-size: 65536
+      buffer-memory: 67108864
+
+      properties:
+        enable.idempotence: true
+        linger.ms: 5
+        delivery.timeout.ms: 120000
+
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP}
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+
+      properties:
+        isolation.level: read_committed
+
+    listener:
+      ack-mode: manual
+      concurrency: 3
+
+    retry:
+      topic:
+        enabled: true
+        attempts: 3
+        backoff:
+          delay: 1000
+          multiplier: 2.0
+          max-delay: 30000
+```
+
+ Spring Boot 3.5 supports these producer, consumer, listener and retry-topic configuration properties.  Home+1
+
+ **Important:** `concurrency: 3` is not universally correct. It means three listener threads/consumers for the container, so the useful maximum is constrained by the number of partitions and the processing capacity of the application.
+
+---
+
+ # Production Security Configuration
+
+ For a SASL/TLS environment, don't hardcode passwords in `application.yml`.
+
+ Use environment variables or your organization's secret manager.
+
+ Conceptually:
+
+```
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+
+    security:
+      protocol: SASL_SSL
+
+    properties:
+      sasl.mechanism: ${KAFKA_SASL_MECHANISM}
+      sasl.jaas.config: ${KAFKA_SASL_JAAS_CONFIG}
+
+    ssl:
+      protocol: TLS
+```
+
+ Spring Boot 3.5 provides SSL/security configuration for Kafka clients, including SSL bundles and security protocol configuration.  Home+1
+
+ For an actual production system, I'd prefer certificate/key material or credentials supplied through a managed secret mechanism rather than putting credentials directly into Git-managed YAML.
+
+---
+
+ # The 10 Things I Would Memorize for a Senior Interview
+
+ If you have limited preparation time, memorize these.
+
+ ### 1\. Partition
+
+ > **Partition is Kafka's unit of ordering, storage and parallelism.**
+
+ ### 2\. Consumer Group
+
+ > **Same group means load balancing; different groups mean independent consumption.**
+
+ ### 3\. High throughput
+
+```
+Partitions
++
+Async producer
++
+Batching
++
+Compression
++
+Parallel consumers
++
+Efficient downstream
+```
+
+ ### 4\. High availability
+
+```
+Multiple brokers
++
+Replication Factor
++
+ISR
++
+min.insync.replicas
++
+acks=all
+```
+
+ Kafka replicates each partition across brokers, with one leader and followers under normal operation.  Apache Kafka
+
+ ### 5\. Consumer lag
+
+```
+Producer rate > Consumer processing rate
+                     ↓
+                   Lag ↑
+```
+
+ ### 6\. Schema evolution
+
+```
+Schema Registry
++
+Avro / Protobuf / JSON Schema
++
+Compatibility rules
+```
+
+ ### 7\. Security
+
+```
+Authentication → SASL
+Encryption     → TLS
+Authorization  → ACL
+```
+
+ ### 8\. Database integration
+
+```
+Business logic → Spring Kafka
+CDC            → Debezium
+Data movement  → Kafka Connect
+```
+
+ ### 9\. Dual-write problem
+
+```
+DB + Kafka
+   ↓
+Dual-write risk
+   ↓
+Transactional Outbox
+```
+
+ ### 10\. Kafka vs RabbitMQ
+
+```
+Kafka
+→ event streaming
+→ replay
+→ durable history
+→ high throughput
+
+RabbitMQ
+→ messaging
+→ routing
+→ work queues
+→ task-oriented communication
+```
+
+---
+
+ # One Master Production Architecture to Remember
+
+ If an interviewer says:
+
+ > **"Design a production Kafka architecture for a microservices system."**
+
+ Draw this:
+
+```
+                         ┌─────────────────────┐
+                         │     API Gateway     │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │    Order Service    │
+                         │    Spring Boot      │
+                         └──────────┬──────────┘
+                                    │
+                              KafkaTemplate
+                                    │
+                                    ▼
+        ╔══════════════════════════════════════════════════════════╗
+        ║                     KAFKA CLUSTER                        ║
+        ║                                                          ║
+        ║   ┌────────────┐  ┌────────────┐  ┌────────────┐        ║
+        ║   │  Broker 1  │  │  Broker 2  │  │  Broker 3  │        ║
+        ║   │            │  │            │  │            │        ║
+        ║   │ P0 Leader  │  │ P1 Leader  │  │ P2 Leader  │        ║
+        ║   │ P1 Replica │  │ P2 Replica │  │ P0 Replica │        ║
+        ║   └────────────┘  └────────────┘  └────────────┘        ║
+        ║                                                          ║
+        ║              Topic: orders                               ║
+        ║          P0 │ P1 │ P2 │ P3 │ P4                         ║
+        ║                                                          ║
+        ║              RF=3 / ISR                                 ║
+        ╚══════════════════════════╤═══════════════════════════════╝
+                                   │
+                     ┌─────────────┼─────────────┐
+                     │             │             │
+                     ▼             ▼             ▼
+               ┌──────────┐  ┌──────────┐  ┌─────────────┐
+               │ Payment  │  │Inventory │  │Notification │
+               │  Group   │  │  Group   │  │    Group    │
+               └────┬─────┘  └────┬─────┘  └──────┬──────┘
+                    │             │               │
+                    ▼             ▼               ▼
+                 Payment       Inventory       Notification
+                 Service        Service           Service
+                    │             │
+                    ▼             ▼
+                 Database      Database
+
+      ┌──────────────────────────────────────────────────────────┐
+      │                  OBSERVABILITY                            │
+      │                                                          │
+      │ Spring Actuator → Micrometer → Prometheus → Grafana      │
+      │                                                          │
+      │ Lag │ Throughput │ Errors │ Latency │ ISR │ URP │ CPU    │
+      └──────────────────────────────────────────────────────────┘
+```
+
+ And underneath it, mention:
+
+```
+                    PRODUCTION CONTROLS
+
+   Reliability       Performance       Security       Evolution
+   ───────────       ───────────       ────────       ─────────
+   acks=all          batching         TLS            Schema Registry
+   idempotence       compression      SASL           Avro/Protobuf
+   RF=3              partitions       ACLs           Compatibility
+   ISR               async send
+   DLT/retry
+   Outbox
+```
+
+ That single diagram lets you naturally talk about **partitions, replication, ISR, consumer groups, scalability, HA, security, observability, schema evolution, retries, and production tuning**—which is exactly the level I'd expect to be tested at with 9 years of experience.
