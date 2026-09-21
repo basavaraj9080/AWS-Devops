@@ -797,4 +797,452 @@ Different groups → Pub-Sub
 
  That distinction becomes important when discussing **partitions, ordering, consumer scaling, and rebalancing**.
 
+>
+>
+
+ ## 14\. How do you achieve exactly-once processing?
+
+ ### Interview answer
+
+ > **Kafka provides exactly-once semantics (EOS) primarily through transactions. For Kafka-to-Kafka processing, I can use a transactional producer so that the produced records and the consumed offsets are committed atomically. If processing fails, the transaction is aborted, so the output records and offset commit are not made visible as a successful transaction.**
+>
+>  **In Spring Kafka, I configure a transactional producer using a `transaction-id-prefix` and use a transactional Kafka template/listener container. Consumers that should see only committed transactional records use `isolation.level=read_committed`.**
+>
+>  **However, exactly-once Kafka semantics do not automatically make external side effects—such as arbitrary database updates, REST calls, or emails—exactly once. For those, I need an appropriate transaction/outbox/idempotency strategy.**
+
+---
+
+ # 1\. The normal problem
+
+ Consider:
+
+```
+Kafka Topic A
+     │
+     ▼
+Consumer
+     │
+     ▼
+Business processing
+     │
+     ▼
+Kafka Topic B
+```
+
+ Without transactions:
+
+```
+Read A
+  ↓
+Process
+  ↓
+Write B       ✅
+  ↓
+Commit offset ❌
+  ↓
+Application crashes
+```
+
+ After restart:
+
+```
+Read A again
+  ↓
+Process again
+  ↓
+Write B again
+```
+
+ Now Topic B can contain a duplicate.
+
+---
+
+ # 2\. Kafka transaction solves this
+
+ With Kafka transactions:
+
+```
+Consume A
+   │
+   ▼
+Begin Transaction
+   │
+   ├── Process A
+   │
+   ├── Produce B
+   │
+   └── Commit Consumer Offset
+             │
+             ▼
+       Commit Transaction
+```
+
+ The important part is that:
+
+```
+Produced records
+      +
+Consumer offsets
+      ↓
+Same Kafka transaction
+```
+
+ So Kafka can atomically commit both.
+
+---
+
+ # 3\. Spring Boot configuration
+
+ For Spring Boot 3.5.x, a basic transactional producer configuration is:
+
+```
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+      # Transactional producer
+      transaction-id-prefix: ${spring.application.name}-${HOSTNAME:local}-
+
+      properties:
+        enable.idempotence: true
+        acks: all
+
+    consumer:
+      group-id: order-service
+
+      # Consumer should read only committed transactional records
+      properties:
+        isolation.level: read_committed
+
+    listener:
+      # Offset is handled as part of the Kafka transaction
+      ack-mode: record
+```
+
+ The important setting for Spring Boot is:
+
+```
+spring:
+  kafka:
+    producer:
+      transaction-id-prefix: order-service-
+```
+
+ This causes Spring Boot/Spring Kafka to configure a transactional `KafkaProducerFactory`.
+
+---
+
+ # 4\. Producing transactionally
+
+ You can use `KafkaTemplate`:
+
+```
+@Service
+public class OrderService {
+
+    private final KafkaTemplate<String, OrderEvent> kafkaTemplate;
+
+    public OrderService(
+            KafkaTemplate<String, OrderEvent> kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
+    }
+
+    public void publish(OrderEvent event) {
+
+        kafkaTemplate.send(
+                "processed-orders",
+                event.getOrderId(),
+                event
+        );
+    }
+}
+```
+
+ When invoked within the appropriate Spring Kafka transaction context, the send participates in the transaction.
+
+---
+
+ # 5\. Kafka-to-Kafka exactly-once flow
+
+ This is the cleanest example.
+
+ Suppose:
+
+```
+orders
+   │
+   ▼
+Order Consumer
+   │
+   ▼
+process
+   │
+   ▼
+processed-orders
+```
+
+ With Kafka transactions:
+
+```
+        Kafka Transaction
+┌───────────────────────────────┐
+│                               │
+│ Consume orders                │
+│       ↓                       │
+│ Process                       │
+│       ↓                       │
+│ Produce processed-orders      │
+│       ↓                       │
+│ Commit consumer offset        │
+│                               │
+└───────────────┬───────────────┘
+                │
+                ▼
+          Commit Transaction
+```
+
+ If anything fails:
+
+```
+Consume
+  ↓
+Process
+  ↓
+Produce
+  ↓
+FAILURE
+  ↓
+Abort Transaction
+```
+
+ The transaction's output is not committed as a successful transaction, and the input offset isn't committed as part of that transaction.
+
+---
+
+ # 6\. `read_committed` is important
+
+ Suppose a producer writes:
+
+```
+Transaction 1
+     │
+     ├── Record A
+     └── Record B
+```
+
+ but then aborts:
+
+```
+Transaction → ABORTED
+```
+
+ A consumer configured with:
+
+```
+spring:
+  kafka:
+    consumer:
+      properties:
+        isolation.level: read_committed
+```
+
+ will not return records from aborted transactions.
+
+ This gives consumers a view containing only successfully committed transactional records.
+
+ Without `read_committed`, consumers can potentially see transactional records that are later aborted.
+
+---
+
+ # 7\. `enable.idempotence` vs transactions
+
+ This is a **very common interview question**.
+
+ ### Idempotent producer
+
+```
+enable.idempotence: true
+```
+
+ Protects against certain producer-side duplicates caused by retries.
+
+```
+Producer
+   │
+   ├── Send A
+   │
+   └── Retry A
+         ↓
+   Kafka avoids duplicate sequence
+```
+
+ But it doesn't make the entire consume → process → produce workflow atomic.
+
+ ### Transactions
+
+```
+Consume
+   +
+Produce
+   +
+Offset commit
+       ↓
+Atomic Kafka transaction
+```
+
+ So:
+
+ > **Idempotence is a building block; transactions provide the atomicity required for Kafka exactly-once semantics.**
+
+---
+
+ # 8\. What about database operations?
+
+ This is where you need to be precise in a senior interview.
+
+ Suppose:
+
+```
+Kafka
+  ↓
+Consumer
+  ↓
+Update PostgreSQL
+  ↓
+Publish Kafka event
+```
+
+ A Kafka transaction does **not automatically make PostgreSQL and Kafka one atomic transaction**.
+
+ For example:
+
+```
+Kafka transaction
+       +
+PostgreSQL transaction
+```
+
+ These are separate transaction systems unless you deliberately implement a distributed transaction mechanism.
+
+ Therefore, don't say:
+
+ > "Kafka exactly-once means my database update happens exactly once." ❌
+
+ A better answer is:
+
+ > **Kafka EOS guarantees apply to Kafka's transactional processing semantics. For external systems such as databases or REST APIs, I need an additional consistency/idempotency strategy.**
+
+---
+
+ # 9\. Database + Kafka: Outbox pattern
+
+ A common production approach is the **Transactional Outbox Pattern**.
+
+ Instead of:
+
+```
+DB update
+   ↓
+Kafka publish
+```
+
+ do:
+
+```
+Database Transaction
+       │
+       ├── Business data
+       │
+       └── Outbox event
+                │
+                ▼
+          Outbox Publisher
+                │
+                ▼
+              Kafka
+```
+
+ The database transaction atomically commits:
+
+```
+Business update
+      +
+Outbox record
+```
+
+ Then a publisher reads the outbox and publishes to Kafka.
+
+ This avoids the classic:
+
+```
+DB SUCCESS
+Kafka FAILURE
+```
+
+ inconsistency window.
+
+---
+
+ # 10\. Exactly-once vs at-least-once
+
+ |  | At-least-once | Exactly-once |
+| --- | --- | --- |
+| Offset | Commit after processing | Transactionally committed |
+| Duplicate processing | Possible | Kafka EOS reduces duplicate effects within transactional Kafka processing |
+| Producer | Normal/idempotent | Transactional |
+| Transaction | Not required | Required for Kafka EOS |
+| `read_committed` | Not required | Recommended for transactional consumers |
+| External DB | Idempotency important | Still requires separate consistency strategy |
+| DLT/retry | Common | Still possible, depending on design |
+
+---
+
+ # Strong 9+ years interview answer
+
+ If asked **"How do you achieve exactly-once processing in Kafka?"**, I'd say:
+
+ > **For Kafka-to-Kafka processing, I use Kafka transactions. In Spring Kafka, I configure a transactional producer using `transaction-id-prefix`, process the input record and produce the output record within the same Kafka transaction, and commit the consumer offset as part of that transaction. If processing fails, the transaction is aborted, so the output and offset are not committed as a successful unit.**
+>
+>  **Consumers that should only see successful transactional writes use `isolation.level=read_committed`.**
+>
+>  **I also distinguish this from producer idempotence: idempotence prevents certain producer duplicates, whereas transactions provide atomicity across consumed offsets and produced records. Finally, Kafka EOS doesn't automatically make external database or REST side effects exactly once, so for those I use idempotency, transactional outbox, or another appropriate consistency pattern.**
+
+ ### Remember this
+
+```
+             Kafka Exactly Once
+
+                  Consume
+                     │
+                     ▼
+              Begin Transaction
+                     │
+              ┌──────┴──────┐
+              │             │
+           Process       Produce
+              │             │
+              └──────┬──────┘
+                     │
+                     ▼
+             Commit Offset
+                     │
+                     ▼
+             Commit Transaction
+                     │
+                     ▼
+                  SUCCESS
+
+              Any failure
+                   │
+                   ▼
+             Abort Transaction
+```
+
+ **Interview one-liner:**
+
+ > **Kafka exactly-once semantics are achieved using transactions so that produced records and consumed offsets are committed atomically; for external side effects, additional idempotency or transactional patterns are required.**
 
