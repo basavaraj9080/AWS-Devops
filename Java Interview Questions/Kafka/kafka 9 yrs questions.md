@@ -1246,3 +1246,473 @@ Kafka FAILURE
 
  > **Kafka exactly-once semantics are achieved using transactions so that produced records and consumed offsets are committed atomically; for external side effects, additional idempotency or transactional patterns are required.**
 
+>
+
+## 6\. At-Least-Once Architecture
+
+ For a **9+ years experienced Kafka/Spring Boot interview**, explain it as an **architecture and failure-handling strategy**, not just a configuration.
+
+ ### Interview answer
+
+ > **At-least-once architecture guarantees that a Kafka message is processed one or more times. The key principle is to process the message first and commit the Kafka offset only after successful processing. If processing fails before the offset is committed, Kafka can redeliver the message.**
+>
+>  **Because redelivery can result in duplicate processing, the downstream business operation must be idempotent or use deduplication. In production, I normally combine manual/container-managed offset handling with retries, a DLT, idempotency, monitoring, and controlled recovery.**
+
+ ## Architecture
+
+```
+                         Kafka Cluster
+                              │
+                              │
+                        orders topic
+                              │
+                              ▼
+                     ┌─────────────────┐
+                     │ Consumer Group  │
+                     │ order-service    │
+                     └────────┬────────┘
+                              │
+                              ▼
+                       Poll Message
+                              │
+                              ▼
+                    ┌──────────────────┐
+                    │ Business Service │
+                    └────────┬─────────┘
+                             │
+                       ┌─────┴─────┐
+                       │           │
+                    SUCCESS      FAILURE
+                       │           │
+                       ▼           ▼
+                Commit Offset     Retry
+                                     │
+                              ┌──────┴──────┐
+                              │             │
+                           Success       Exhausted
+                              │             │
+                              ▼             ▼
+                       Commit Offset       DLT
+```
+
+ ### The critical sequence
+
+```
+Read
+  ↓
+Process
+  ↓
+Success
+  ↓
+Commit Offset
+```
+
+ **Never intentionally do:**
+
+```
+Read
+  ↓
+Commit Offset
+  ↓
+Process
+```
+
+ because if the application crashes between the commit and processing, the message can be skipped.
+
+---
+
+ ## Spring Boot 3.5.x configuration
+
+```
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+
+    consumer:
+      group-id: order-service
+
+      # Critical for at-least-once processing
+      enable-auto-commit: false
+
+      # Only applies when no committed offset exists
+      auto-offset-reset: earliest
+
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+
+    listener:
+      # Commit after successful processing of each record
+      ack-mode: record
+
+      # Consumer concurrency
+      concurrency: 3
+```
+
+ The key configuration is:
+
+```
+consumer:
+  enable-auto-commit: false
+
+listener:
+  ack-mode: record
+```
+
+---
+
+ ## Processing flow
+
+ Suppose Kafka has:
+
+```
+Partition 0
+
+Offset 100 → Order A
+Offset 101 → Order B
+Offset 102 → Order C
+```
+
+ Consumer receives:
+
+```
+Offset 100
+    ↓
+Process Order A
+    ↓
+SUCCESS
+    ↓
+Commit offset
+```
+
+ Kafka now knows that the consumer has successfully processed that position.
+
+ But suppose:
+
+```
+Offset 101
+    ↓
+Process Order B
+    ↓
+Database update SUCCESS
+    ↓
+Application crashes
+    ↓
+Offset NOT committed
+```
+
+ After restart:
+
+```
+Offset 101
+    ↓
+Order B delivered again
+    ↓
+Process again
+```
+
+ That's the fundamental behavior of **at-least-once**.
+
+---
+
+ # Why idempotency is mandatory
+
+ The major trade-off is:
+
+```
+At-least-once
+      ↓
+No intentional message loss
+      ↓
+Redelivery possible
+      ↓
+Duplicate processing possible
+      ↓
+Need idempotency
+```
+
+ For example, suppose:
+
+```
+eventId = 12345
+```
+
+ Your database can maintain:
+
+```
+processed_events
+
+event_id
+---------
+12345
+```
+
+ Processing can then follow:
+
+```
+Receive event
+      ↓
+Check eventId
+      │
+ ┌────┴────┐
+ │         │
+Exists   Doesn't exist
+ │         │
+ ▼         ▼
+Skip     Process
+           │
+           ▼
+      Mark processed
+```
+
+ This prevents a redelivered Kafka record from producing the same business effect twice.
+
+---
+
+ # Retry + DLT
+
+ In production, I would normally add:
+
+```
+                 Kafka
+                   │
+                   ▼
+                Consumer
+                   │
+                   ▼
+                Process
+              /         \
+         Success       Failure
+            │             │
+            ▼             ▼
+       Commit Offset     Retry
+                           │
+                       Retry again
+                           │
+                     ┌─────┴─────┐
+                     │           │
+                  Success     Exhausted
+                     │           │
+                     ▼           ▼
+               Commit Offset    DLT
+```
+
+ For Spring Kafka, the retry/DLT layer can be implemented with:
+
+```
+DefaultErrorHandler
++
+DeadLetterPublishingRecoverer
+```
+
+ For example:
+
+```
+@Bean
+public DefaultErrorHandler kafkaErrorHandler(
+        KafkaTemplate<Object, Object> kafkaTemplate) {
+
+    DeadLetterPublishingRecoverer recoverer =
+            new DeadLetterPublishingRecoverer(
+                    kafkaTemplate,
+                    (record, exception) ->
+                            new TopicPartition(
+                                    record.topic() + ".DLT",
+                                    record.partition()
+                            )
+            );
+
+    FixedBackOff backOff = new FixedBackOff(
+            1000L,
+            3L
+    );
+
+    return new DefaultErrorHandler(
+            recoverer,
+            backOff
+    );
+}
+```
+
+ So:
+
+```
+orders
+  ↓
+Consumer
+  ↓
+Failure
+  ↓
+1st retry
+  ↓
+2nd retry
+  ↓
+3rd retry
+  ↓
+orders.DLT
+```
+
+---
+
+ # At-least-once with a database
+
+ This is where a **senior-level answer** becomes important.
+
+ Suppose:
+
+```
+Kafka
+  ↓
+Consumer
+  ↓
+Update PostgreSQL
+  ↓
+Commit Kafka offset
+```
+
+ There are two separate operations:
+
+```
+Database transaction
+        +
+Kafka offset commit
+```
+
+ They aren't automatically one atomic transaction.
+
+ This failure is possible:
+
+```
+Database update     ✅
+Kafka offset commit ❌
+Application crash
+```
+
+ The message is redelivered.
+
+ Therefore:
+
+```
+At-least-once
+       +
+Database
+       ↓
+Idempotency / Deduplication
+```
+
+ is essential.
+
+ For more complex database/Kafka consistency requirements, a **transactional outbox** is another common architecture.
+
+---
+
+ # At-least-once vs exactly-once
+
+ This is a likely follow-up question.
+
+ ### At-least-once
+
+```
+Process
+   ↓
+Commit offset
+```
+
+ Potentially:
+
+```
+Process
+Process again
+```
+
+ ### Exactly-once Kafka processing
+
+```
+Consume
+   +
+Process
+   +
+Produce
+   +
+Commit offset
+        ↓
+Kafka Transaction
+```
+
+ So don't say:
+
+ > "At-least-once means Kafka guarantees the business operation happens exactly once."
+
+ It doesn't.
+
+ A better statement is:
+
+ > **At-least-once prioritizes avoiding message loss, accepting that duplicates can occur.**
+
+---
+
+ # Production architecture I'd describe in an interview
+
+```
+                         ┌─────────────────────┐
+                         │    Kafka Cluster    │
+                         │                     │
+                         │ orders topic        │
+                         │ replication         │
+                         │ ISR                 │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │ Consumer Group      │
+                         │ order-service       │
+                         │                     │
+                         │ auto-commit=false   │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │ Business Service    │
+                         └──────────┬──────────┘
+                                    │
+                         ┌──────────┴──────────┐
+                         │                     │
+                      SUCCESS                FAILURE
+                         │                     │
+                         ▼                     ▼
+                  Commit Offset              Retry
+                                               │
+                                          Retry exhausted
+                                               │
+                                               ▼
+                                             DLT
+                         │
+                         ▼
+                  Idempotent DB/API
+                  processing
+```
+
+ ## Strong 9+ years answer
+
+ > **In an at-least-once architecture, I disable consumer auto-commit and commit the offset only after successful business processing. If processing fails before the offset is committed, Kafka redelivers the record. I configure retries and a DLT for persistent failures. Since redelivery can happen after the business operation succeeds but before the offset commit, I make downstream operations idempotent using an event ID, unique constraint, or deduplication mechanism.**
+>
+>  **For database integration, I don't assume the Kafka offset and database transaction are atomic. Depending on the use case, I use idempotency or a transactional outbox pattern.**
+
+ ### The formula to remember
+
+```
+AT-LEAST-ONCE
+=
+Process First
++
+Commit Offset After Success
++
+Retry Failures
++
+DLT After Retry Exhaustion
++
+Idempotent Business Logic
+```
+
+ And the strongest one-line interview answer:
+
+ > **At-least-once means I would rather process a message twice than lose it once: the offset is committed only after successful processing, and duplicate delivery is handled through idempotent business logic.**
