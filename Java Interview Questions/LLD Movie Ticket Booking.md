@@ -832,3 +832,6 @@ Once these 8 lines are in your head, you can **reconstruct the classes and code 
 And the key phrase to keep repeating in your head is:
 
 > **"Physical seat, show-specific availability, lock before payment, confirm after payment."**
+
+---
+---
