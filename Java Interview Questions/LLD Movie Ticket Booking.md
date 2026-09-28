@@ -1,5 +1,9 @@
 <img width="1312" height="1199" alt="image" src="https://github.com/user-attachments/assets/4fa21c57-9468-4b3f-b33c-261f7ab81eb3" />
 >
+></br>
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/25b595e6-c5d5-425e-8381-03564eb591fb" />
+
+</br>
 >Absolutely. Let's go through the diagram as a **story**, because that's much easier to remember than memorizing classes.
 
 The entire diagram is explaining one simple thing:
