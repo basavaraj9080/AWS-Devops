@@ -748,3 +748,52 @@ Business Rule Violations
 
 
 You can save the above content as Microservices_Resilience_Guide.md. It is formatted for GitHub, Obsidian, VS Code Markdown Preview, or interview preparation notes.
+
+---
+---
+
+## Question 2.How do you make sure data stays consistent across different services, especially if a message fails or gets delayed during processing?
+>
+For a Senior Java Backend Developer interview, you can answer this using Saga Pattern, Kafka retries, idempotency, and eventual consistency.
+
+## Interview-ready answer
+
+“In a microservices architecture, each service typically maintains its own database, so maintaining consistency across services is challenging.
+
+I use the Saga Pattern to manage transactions across multiple services. Instead of one distributed database transaction, each service performs a local transaction and publishes an event for the next service.
+
+For example, in an order processing system, the Order Service creates an order and publishes an event to Kafka. The Payment Service consumes the event and processes the payment, and then the Inventory Service updates stock.
+
+If a Kafka message fails or gets delayed, I use retries with exponential backoff. If processing continues to fail, I send the message to a Dead Letter Topic for investigation and reprocessing.
+
+To avoid duplicate processing, I implement idempotency using a unique event ID or transaction ID. I also use the Transactional Outbox Pattern to ensure that a database update and the corresponding event publication are not lost due to a failure between the two operations.
+
+This approach provides eventual consistency. If a business operation cannot be completed, the Saga can execute compensating transactions, such as refunding a payment or releasing reserved inventory.
+
+Finally, I use monitoring, correlation IDs, and reconciliation jobs to detect and resolve inconsistencies.”
+
+## Example: Order processing flow
+
+<img width="952" height="1816" alt="mermaid-diagram (1)" src="https://github.com/user-attachments/assets/368c9439-02af-43cf-b16c-136abf8afa75" />
+
+
+## Key concepts to remember
+
+| Problem                                    | Solution                                     |
+| ------------------------------------------ | -------------------------------------------- |
+| Message delivery failure                   | Kafka retries and DLT                        |
+| Duplicate messages                         | Idempotent consumers                         |
+| Database saved, event not published        | Transactional Outbox                         |
+| Multiple services need coordinated updates | Saga Pattern                                 |
+| Message arrives late                       | Event IDs, versioning, ordering where needed |
+| Data becomes inconsistent                  | Reconciliation and monitoring                |
+
+One important point: Kafka's exactly-once processing features do not automatically guarantee exactly-once effects across multiple independent databases. Idempotency and transaction design are still essential.
+
+### If the interviewer asks, “Which approach have you used?”
+
+You can say:
+
+“In my Spring Boot and Kafka microservices work, I focus on reliable event processing through retries, dead-letter handling, and idempotent consumers. For cross-service business transactions, I would use Saga orchestration or choreography depending on workflow complexity, and the Outbox Pattern where database updates must reliably produce events.”
+
+Only claim specific production implementation experience if you have actually used it.
