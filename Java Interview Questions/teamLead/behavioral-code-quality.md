@@ -84,3 +84,104 @@ This would improve separation of concerns, make unit testing easier, and reduce 
 I would also suggest discussing the change with the developer if the design is complex, rather than just requesting changes without an explanation.
 
 The key point is that my review comment is specific, respectful, and actionable. I explain what needs improvement, why it matters, and how the developer can address it.”
+
+---
+---
+## Guide the junior to refactor or improve that method. What would you suggest to make it clearer and more maintainable?
+>
+You can answer this in your interview with a practical Java and Spring Boot example.
+
+## Interview-ready answer
+
+“I would guide the junior developer to follow the Single Responsibility Principle and break the large method into smaller methods, each handling one specific task.
+
+First, I would ask them to identify the different responsibilities in the existing method, such as order validation, payment processing, inventory updates, and Kafka event publishing.
+
+Then, I would suggest extracting these responsibilities into well-named methods or separate service classes. I would also recommend using meaningful variable names, avoiding duplicate code, handling exceptions properly, and writing unit tests for each component.
+
+For example, instead of putting the entire order processing workflow into one large method, we could make the main method read like a sequence of business steps.
+
+I would work with the junior developer through a code review or pair-programming session, explain why the changes improve readability, and encourage them to apply the same principles in future implementations.”
+
+## Example: Before and after refactoring
+
+Before — difficult to maintain
+
+```
+public void processOrder(Order order) {
+    if (order != null && order.getAmount() > 0) {
+        // Validate order
+        // Process payment
+        // Update inventory
+        // Publish Kafka event
+    }
+}
+```
+
+After — clearer structure
+
+```
+public void processOrder(Order order) {
+    validateOrder(order);
+    paymentService.processPayment(order);
+    inventoryService.updateInventory(order);
+    eventPublisher.publishOrderCreated(order);
+}
+
+private void validateOrder(Order order) {
+    if (order == null || order.getAmount() <= 0) {
+        throw new IllegalArgumentException("Invalid order");
+    }
+}
+```
+
+In a real application, I would keep payment, inventory, and event publishing in appropriate Spring service components, with clear transaction boundaries and error handling.
+
+Key point to tell the interviewer: “I don't just ask a junior developer to rewrite code. I explain the reasoning, demonstrate a better approach, review the changes together, and ensure the refactored code has appropriate unit tests without changing the existing business behavior.”
+
+---
+---
+## Splitting the task makes sense. What if the junior developer struggles with naming or structuring those new methods? How would you help them get better at that?
+>
+## Interview-ready answer
+
+“I would guide the junior developer by explaining how to choose method names based on business intent and responsibility, rather than implementation details.
+
+For example, instead of naming a method `processData()` or `doTask()`, I would encourage names like `validateOrder()`, `processPayment()`, and `publishOrderCreatedEvent()`. These names clearly communicate what each method does.
+
+For structuring methods, I would teach them to keep each method focused on one responsibility and make the main workflow easy to read from top to bottom.
+
+I would use pair programming to refactor one example together, explain why I chose particular names and boundaries, and then ask them to apply the same approach to another method independently.
+
+I would also recommend following our team's naming conventions, reviewing existing well-written code, and using code reviews as a learning opportunity. Over time, I would give them more ownership and constructive feedback so they develop confidence in making these decisions themselves.
+
+My goal is not just to fix the current code, but to help the junior developer build the skills to write clean, maintainable code independently.”
+
+### Quick example
+
+Instead of:
+
+```
+void process(Order o) {
+    check(o);
+    pay(o);
+    update(o);
+    send(o);
+}
+```
+
+I would guide them toward:
+
+```
+void processOrder(Order order) {
+    validateOrder(order);
+    paymentService.processPayment(order);
+    inventoryService.updateInventory(order);
+    eventPublisher.publishOrderCreated(order);
+}
+```
+
+Key takeaway: Teach through examples, explain the reasoning, practise together, and gradually encourage independent decision-making.
+
+---
+---
