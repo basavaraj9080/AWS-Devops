@@ -64,3 +64,23 @@ This makes the workflow easier to read, test, and maintain. Each responsibility 
 Strong closing statement for the interview:
 
 “My approach is to give respectful, evidence-based feedback during code reviews, explain why a change improves maintainability, and establish consistent coding standards across the team. I focus on improving both the code and the developer's skills.”
+
+---
+---
+## So you mentioned explaining architecture and raising code review comments. Could you give a specific example of a code review comment you'd make for hard-to-read code?
+>
+“In a code review, suppose I see a method in a Spring Boot service that validates an order, processes payment, updates inventory, and publishes a Kafka event all in one method.
+
+I would leave a comment like this:
+
+Example code review comment:
+
+Could we refactor this method into smaller, well-named methods to improve readability and maintainability? Currently, it handles multiple responsibilities, which makes the code harder to understand, test, and modify.
+
+For example, we could separate order validation, payment processing, inventory updates, and Kafka event publishing into dedicated methods or service classes.
+
+This would improve separation of concerns, make unit testing easier, and reduce the risk of introducing bugs when modifying individual steps.
+
+I would also suggest discussing the change with the developer if the design is complex, rather than just requesting changes without an explanation.
+
+The key point is that my review comment is specific, respectful, and actionable. I explain what needs improvement, why it matters, and how the developer can address it.”
